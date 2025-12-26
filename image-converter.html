@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Converter Tool</title>
+
+<style>
+:root {
+  --primary: #0d6efd;
+  --light: #ffffff;
+  --bg: #f4f9ff;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  padding: 15px;
+}
+
+.container {
+  max-width: 500px;
+  background: var(--light);
+  margin: auto;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+h1 {
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.upload-label {
+  border: 2px dashed var(--primary);
+  padding: 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+.upload-label:hover {
+  background: #e9f2ff;
+}
+
+.preview img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+select, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+}
+
+select {
+  border: 1px solid #ccc;
+}
+
+button {
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 22px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Image Converter</h1>
+
+  <label class="upload-label">
+    Click to Upload Image
+    <input type="file" id="upload" accept="image/*">
+  </label>
+
+  <div class="preview" id="preview"></div>
+
+  <select id="format">
+    <option value="image/jpeg">Convert to JPG</option>
+    <option value="image/png">Convert to PNG</option>
+    <option value="image/webp">Convert to WEBP</option>
+  </select>
+
+  <button onclick="convertImage()">Convert & Download</button>
+</div>
+
+<script>
+let image = new Image();
+
+document.getElementById("upload").addEventListener("change", function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    image.src = reader.result;
+    document.getElementById("preview").innerHTML =
+      `<img src="${reader.result}" alt="Preview Image">`;
+  };
+  reader.readAsDataURL(file);
+});
+
+function convertImage() {
+  if (!image.src) {
+    alert("Please upload an image first.");
+    return;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = image.width;
+  canvas.height = image.height;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(image, 0, 0);
+
+  const format = document.getElementById("format").value;
+  const converted = canvas.toDataURL(format, 0.8);
+
+  const link = document.createElement("a");
+  link.href = converted;
+  link.download = `converted-image.${format.split("/")[1]}`;
+  link.click();
+}
+</script>
+
+</body>
+</html>

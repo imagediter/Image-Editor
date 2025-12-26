@@ -7,10 +7,9 @@
 
 <style>
 :root {
-  --blue: #007BFF;
+  --blue: #007bff;
   --light-blue: #eaf4ff;
   --white: #ffffff;
-  --gray: #f4f6f8;
   --dark: #333;
 }
 
@@ -21,105 +20,92 @@
 
 body {
   margin: 0;
-  background: var(--gray);
+  background: var(--light-blue);
+  color: var(--dark);
 }
 
 .container {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: auto;
-  padding: 20px;
+  padding: 15px;
 }
 
-.header {
+h1 {
   text-align: center;
+  color: var(--blue);
   margin-bottom: 20px;
 }
 
-.header h1 {
-  color: var(--blue);
-}
-
-.upload-box {
-  background: var(--white);
-  padding: 20px;
-  border-radius: 10px;
-  text-align: center;
-  border: 2px dashed var(--blue);
-}
-
-.upload-box input {
-  display: none;
-}
-
-.upload-label {
-  display: inline-block;
-  padding: 12px 25px;
-  background: var(--blue);
-  color: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.actions {
+.controls {
   display: flex;
-  justify-content: space-between;
-  margin: 20px 0;
-  flex-wrap: wrap;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
 }
 
-.btn {
-  padding: 10px 18px;
+button, input[type="file"] {
+  background: var(--blue);
+  color: var(--white);
   border: none;
+  padding: 10px 16px;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: bold;
 }
 
-.delete {
-  background: #dc3545;
-  color: #fff;
+button:hover {
+  opacity: 0.9;
 }
 
-.image-grid {
+input[type="file"] {
+  padding: 8px;
+}
+
+.grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 15px;
 }
 
-.image-card {
+.card {
   background: var(--white);
-  padding: 15px;
-  border-radius: 10px;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-.image-card img {
+.card img {
   width: 100%;
   height: 180px;
-  object-fit: contain;
-  background: var(--light-blue);
+  object-fit: cover;
   border-radius: 6px;
 }
 
-.range-box {
-  margin: 10px 0;
+.info {
+  font-size: 14px;
+  margin: 6px 0;
 }
 
-.range-box input {
+.card input {
   width: 100%;
+  margin: 5px 0;
+  padding: 6px;
 }
 
-.download {
-  background: var(--blue);
-  color: #fff;
-  width: 100%;
-  margin-top: 10px;
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  flex: 1;
+  padding: 8px;
+  font-size: 14px;
 }
 
 @media (max-width: 600px) {
-  .image-card img {
-    height: 150px;
+  h1 {
+    font-size: 20px;
   }
 }
 </style>
@@ -127,101 +113,95 @@ body {
 
 <body>
 <div class="container">
-  <div class="header">
-    <h1>Image Compressor</h1>
-    <p>Upload images, adjust compression, and download individually</p>
+  <h1>Image Compressor</h1>
+
+  <div class="controls">
+    <input type="file" id="upload" multiple accept="image/*">
+    <button onclick="clearAll()">Delete All</button>
   </div>
 
-  <div class="upload-box">
-    <label class="upload-label">
-      Upload Images
-      <input type="file" multiple accept="image/*" id="upload">
-    </label>
-  </div>
-
-  <div class="actions">
-    <button class="btn delete" onclick="clearAll()">Delete All</button>
-  </div>
-
-  <div class="image-grid" id="imageGrid"></div>
+  <div class="grid" id="grid"></div>
 </div>
 
 <script>
 const upload = document.getElementById("upload");
-const imageGrid = document.getElementById("imageGrid");
+const grid = document.getElementById("grid");
 
-upload.addEventListener("change", handleImages);
+upload.addEventListener("change", () => {
+  [...upload.files].forEach(file => createCard(file));
+});
 
-function handleImages() {
-  [...upload.files].forEach(file => createImageCard(file));
-}
-
-function createImageCard(file) {
+function createCard(file) {
   const reader = new FileReader();
-  reader.readAsDataURL(file);
-
-  reader.onload = () => {
+  reader.onload = e => {
     const card = document.createElement("div");
-    card.className = "image-card";
+    card.className = "card";
 
-    const img = document.createElement("img");
-    img.src = reader.result;
+    card.innerHTML = `
+      <img src="${e.target.result}">
+      <div class="info">Original: ${(file.size/1024).toFixed(1)} KB</div>
+      <input type="number" placeholder="Target size (KB)" min="10">
+      <div class="actions">
+        <button>Compress</button>
+        <button disabled>Download</button>
+      </div>
+    `;
 
-    const rangeBox = document.createElement("div");
-    rangeBox.className = "range-box";
+    const input = card.querySelector("input");
+    const compressBtn = card.querySelectorAll("button")[0];
+    const downloadBtn = card.querySelectorAll("button")[1];
+    let compressedBlob = null;
 
-    const range = document.createElement("input");
-    range.type = "range";
-    range.min = 10;
-    range.max = 100;
-    range.value = 70;
+    compressBtn.onclick = async () => {
+      if (!input.value) return alert("Enter target size in KB");
 
-    const label = document.createElement("small");
-    label.innerText = "Compression: 70%";
+      const targetKB = parseInt(input.value);
+      compressedBlob = await compressImage(file, targetKB);
 
-    range.oninput = () => {
-      label.innerText = `Compression: ${range.value}%`;
-      compressImage(img, file, range.value / 100);
+      card.querySelector(".info").textContent =
+        `Compressed: ${(compressedBlob.size/1024).toFixed(1)} KB`;
+
+      downloadBtn.disabled = false;
     };
 
-    rangeBox.append(range, label);
+    downloadBtn.onclick = () => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(compressedBlob);
+      link.download = "compressed-" + file.name;
+      link.click();
+    };
 
-    const downloadBtn = document.createElement("button");
-    downloadBtn.className = "btn download";
-    downloadBtn.innerText = "Download";
-    downloadBtn.onclick = () => downloadImage(img.src, file.name);
-
-    card.append(img, rangeBox, downloadBtn);
-    imageGrid.appendChild(card);
-
-    compressImage(img, file, 0.7);
+    grid.appendChild(card);
   };
+  reader.readAsDataURL(file);
 }
 
-function compressImage(img, file, quality) {
+async function compressImage(file, targetKB) {
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+  await img.decode();
+
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-  const image = new Image();
 
-  image.src = img.src;
-  image.onload = () => {
-    canvas.width = image.width;
-    canvas.height = image.height;
-    ctx.drawImage(image, 0, 0);
+  let quality = 0.9;
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img, 0, 0);
 
-    img.src = canvas.toDataURL("image/jpeg", quality);
-  };
-}
+  let blob;
+  do {
+    blob = await new Promise(res =>
+      canvas.toBlob(res, "image/jpeg", quality)
+    );
+    quality -= 0.05;
+  } while (blob.size / 1024 > targetKB && quality > 0.1);
 
-function downloadImage(dataURL, filename) {
-  const link = document.createElement("a");
-  link.href = dataURL;
-  link.download = "compressed-" + filename;
-  link.click();
+  return blob;
 }
 
 function clearAll() {
-  imageGrid.innerHTML = "";
+  grid.innerHTML = "";
   upload.value = "";
 }
 </script>

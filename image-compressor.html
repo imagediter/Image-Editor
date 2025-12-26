@@ -1,72 +1,229 @@
-const fileInput = document.getElementById('file-input');
-const imageList = document.getElementById('image-list');
-const bulkActions = document.getElementById('bulk-actions');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Compressor Tool</title>
 
-fileInput.addEventListener('change', handleFiles);
-
-function handleFiles(e) {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) bulkActions.style.display = 'block';
-    
-    files.forEach(file => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            createImageCard(event.target.result, file.name);
-        };
-    });
+<style>
+:root {
+  --blue: #007BFF;
+  --light-blue: #eaf4ff;
+  --white: #ffffff;
+  --gray: #f4f6f8;
+  --dark: #333;
 }
 
-function createImageCard(src, fileName) {
-    const card = document.createElement('div');
-    card.className = 'image-card';
-    
-    card.innerHTML = `
-        <img src="${src}" class="preview-img">
-        <div class="controls-row">
-            <small>${fileName}</small>
-            <label>Quality: <span class="q-val">80</span>%</label>
-            <input type="range" class="quality-slider" min="1" max="100" value="80">
-            <button class="btn download-btn">Download Compressed</button>
-        </div>
-    `;
-
-    const slider = card.querySelector('.quality-slider');
-    const qValDisplay = card.querySelector('.q-val');
-    const downloadBtn = card.querySelector('.download-btn');
-
-    slider.oninput = () => qValDisplay.innerText = slider.value;
-
-    downloadBtn.onclick = () => {
-        compressAndDownload(src, fileName, slider.value / 100);
-    };
-
-    imageList.appendChild(card);
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
 }
 
-function compressAndDownload(src, fileName, quality) {
-    const img = new Image();
-    img.src = src;
-    img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+body {
+  margin: 0;
+  background: var(--gray);
+}
 
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 20px;
+}
 
-        // Convert to blob
-        canvas.toBlob((blob) => {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `compressed_${fileName}`;
-            link.click();
-        }, 'image/jpeg', quality);
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  color: var(--blue);
+}
+
+.upload-box {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  border: 2px dashed var(--blue);
+}
+
+.upload-box input {
+  display: none;
+}
+
+.upload-label {
+  display: inline-block;
+  padding: 12px 25px;
+  background: var(--blue);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.delete {
+  background: #dc3545;
+  color: #fff;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 15px;
+}
+
+.image-card {
+  background: var(--white);
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.image-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  background: var(--light-blue);
+  border-radius: 6px;
+}
+
+.range-box {
+  margin: 10px 0;
+}
+
+.range-box input {
+  width: 100%;
+}
+
+.download {
+  background: var(--blue);
+  color: #fff;
+  width: 100%;
+  margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+  .image-card img {
+    height: 150px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Image Compressor</h1>
+    <p>Upload images, adjust compression, and download individually</p>
+  </div>
+
+  <div class="upload-box">
+    <label class="upload-label">
+      Upload Images
+      <input type="file" multiple accept="image/*" id="upload">
+    </label>
+  </div>
+
+  <div class="actions">
+    <button class="btn delete" onclick="clearAll()">Delete All</button>
+  </div>
+
+  <div class="image-grid" id="imageGrid"></div>
+</div>
+
+<script>
+const upload = document.getElementById("upload");
+const imageGrid = document.getElementById("imageGrid");
+
+upload.addEventListener("change", handleImages);
+
+function handleImages() {
+  [...upload.files].forEach(file => createImageCard(file));
+}
+
+function createImageCard(file) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+
+  reader.onload = () => {
+    const card = document.createElement("div");
+    card.className = "image-card";
+
+    const img = document.createElement("img");
+    img.src = reader.result;
+
+    const rangeBox = document.createElement("div");
+    rangeBox.className = "range-box";
+
+    const range = document.createElement("input");
+    range.type = "range";
+    range.min = 10;
+    range.max = 100;
+    range.value = 70;
+
+    const label = document.createElement("small");
+    label.innerText = "Compression: 70%";
+
+    range.oninput = () => {
+      label.innerText = `Compression: ${range.value}%`;
+      compressImage(img, file, range.value / 100);
     };
+
+    rangeBox.append(range, label);
+
+    const downloadBtn = document.createElement("button");
+    downloadBtn.className = "btn download";
+    downloadBtn.innerText = "Download";
+    downloadBtn.onclick = () => downloadImage(img.src, file.name);
+
+    card.append(img, rangeBox, downloadBtn);
+    imageGrid.appendChild(card);
+
+    compressImage(img, file, 0.7);
+  };
+}
+
+function compressImage(img, file, quality) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const image = new Image();
+
+  image.src = img.src;
+  image.onload = () => {
+    canvas.width = image.width;
+    canvas.height = image.height;
+    ctx.drawImage(image, 0, 0);
+
+    img.src = canvas.toDataURL("image/jpeg", quality);
+  };
+}
+
+function downloadImage(dataURL, filename) {
+  const link = document.createElement("a");
+  link.href = dataURL;
+  link.download = "compressed-" + filename;
+  link.click();
 }
 
 function clearAll() {
-    imageList.innerHTML = '';
-    bulkActions.style.display = 'none';
-    fileInput.value = '';
+  imageGrid.innerHTML = "";
+  upload.value = "";
 }
+</script>
+</body>
+</html>

@@ -2,210 +2,211 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Image Compressor Tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Compressor Tool</title>
 
 <style>
 :root {
-  --blue: #0d6efd;
-  --light: #f5f9ff;
+  --blue: #007bff;
+  --light-blue: #eaf4ff;
   --white: #ffffff;
 }
 
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: var(--light);
+  background: var(--light-blue);
 }
 
 .container {
   max-width: 1100px;
   margin: auto;
-  padding: 20px;
+  padding: 15px;
 }
 
 h1 {
   text-align: center;
   color: var(--blue);
+  margin-bottom: 10px;
 }
 
-.card {
+.upload-box {
   background: var(--white);
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-radius: 10px;
+  text-align: center;
+  border: 2px dashed var(--blue);
 }
 
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: center;
-  justify-content: space-between;
+.upload-box input {
+  display: none;
 }
 
-input[type="file"] {
-  padding: 10px;
-}
-
-.range-box {
-  flex: 1;
-}
-
-input[type="range"] {
-  width: 100%;
-}
-
-button {
+.upload-label {
+  display: inline-block;
+  padding: 12px 20px;
   background: var(--blue);
   color: white;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-weight: bold;
 }
 
-button.secondary {
-  background: #6c757d;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.preview-grid {
+.image-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 15px;
   margin-top: 20px;
 }
 
-.preview-item {
-  background: var(--light);
+.image-card {
+  background: var(--white);
   border-radius: 10px;
-  padding: 10px;
-  text-align: center;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.preview-item img {
+.image-card img {
   width: 100%;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
-.size-info {
-  font-size: 13px;
+.info {
+  font-size: 14px;
   margin: 8px 0;
 }
 
-.download-btn {
-  display: block;
-  margin-top: 8px;
-  text-decoration: none;
+.slider {
+  width: 100%;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.compress-btn {
   background: var(--blue);
   color: white;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 13px;
+}
+
+.download-btn {
+  background: #28a745;
+  color: white;
+}
+
+.reset-btn {
+  background: #dc3545;
+  color: white;
+  margin-top: 20px;
+  width: 100%;
 }
 
 @media (max-width: 600px) {
-  .controls {
-    flex-direction: column;
+  h1 {
+    font-size: 22px;
   }
 }
 </style>
 </head>
 
 <body>
-
 <div class="container">
-  <h1>Image Compressor</h1>
+  <h1>Image Compressor Tool</h1>
 
-  <div class="card">
-    <div class="controls">
-      <input type="file" id="upload" accept="image/*" multiple>
-
-      <div class="range-box">
-        <label>Compression Quality: <strong id="qualityValue">70%</strong></label>
-        <input type="range" id="quality" min="10" max="100" value="70">
-      </div>
-
-      <button onclick="resetAll()" class="secondary">Reset</button>
-    </div>
-
-    <div class="preview-grid" id="previewGrid"></div>
+  <div class="upload-box">
+    <label class="upload-label">
+      Upload Images
+      <input type="file" id="imageInput" multiple accept="image/*">
+    </label>
   </div>
+
+  <div class="image-list" id="imageList"></div>
+
+  <button class="reset-btn" onclick="resetAll()">Reset All</button>
 </div>
 
 <script>
-const upload = document.getElementById("upload");
-const previewGrid = document.getElementById("previewGrid");
-const qualitySlider = document.getElementById("quality");
-const qualityValue = document.getElementById("qualityValue");
+const imageInput = document.getElementById("imageInput");
+const imageList = document.getElementById("imageList");
 
-qualitySlider.addEventListener("input", () => {
-  qualityValue.textContent = qualitySlider.value + "%";
-  if (upload.files.length) processImages(upload.files);
+imageInput.addEventListener("change", () => {
+  [...imageInput.files].forEach(file => createImageCard(file));
 });
 
-upload.addEventListener("change", () => {
-  previewGrid.innerHTML = "";
-  processImages(upload.files);
-});
+function createImageCard(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const card = document.createElement("div");
+    card.className = "image-card";
 
-function processImages(files) {
-  previewGrid.innerHTML = "";
-
-  [...files].forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => compressImage(e.target.result, file);
-    reader.readAsDataURL(file);
-  });
-}
-
-function compressImage(src, file) {
-  const img = new Image();
-  img.src = src;
-
-  img.onload = () => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
-
-    const quality = qualitySlider.value / 100;
-    const compressedData = canvas.toDataURL("image/jpeg", quality);
-
-    const originalSize = (file.size / 1024).toFixed(1);
-    const compressedSize = (compressedData.length / 1024).toFixed(1);
-
-    const div = document.createElement("div");
-    div.className = "preview-item";
-    div.innerHTML = `
-      <img src="${compressedData}">
-      <div class="size-info">
-        Original: ${originalSize} KB<br>
-        Compressed: ${compressedSize} KB
+    card.innerHTML = `
+      <img src="${e.target.result}">
+      <div class="info">Original Size: ${(file.size / 1024).toFixed(1)} KB</div>
+      <label>Compression Quality: <span class="q">70</span>%</label>
+      <input type="range" min="10" max="100" value="70" class="slider">
+      <div class="info compressed-info"></div>
+      <div class="buttons">
+        <button class="compress-btn">Compress</button>
+        <button class="download-btn" disabled>Download</button>
       </div>
-      <a href="${compressedData}" download="compressed-${file.name}" class="download-btn">
-        Download
-      </a>
     `;
 
-    previewGrid.appendChild(div);
+    const slider = card.querySelector(".slider");
+    const qText = card.querySelector(".q");
+    const compressBtn = card.querySelector(".compress-btn");
+    const downloadBtn = card.querySelector(".download-btn");
+    const compressedInfo = card.querySelector(".compressed-info");
+
+    let compressedBlob = null;
+
+    slider.oninput = () => qText.textContent = slider.value;
+
+    compressBtn.onclick = () => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        canvas.toBlob(blob => {
+          compressedBlob = blob;
+          compressedInfo.textContent =
+            "Compressed Size: " + (blob.size / 1024).toFixed(1) + " KB";
+          downloadBtn.disabled = false;
+        }, "image/jpeg", slider.value / 100);
+      };
+    };
+
+    downloadBtn.onclick = () => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(compressedBlob);
+      link.download = "compressed-" + file.name.replace(/\.\w+$/, ".jpg");
+      link.click();
+    };
+
+    imageList.appendChild(card);
   };
+  reader.readAsDataURL(file);
 }
 
 function resetAll() {
-  upload.value = "";
-  previewGrid.innerHTML = "";
+  imageInput.value = "";
+  imageList.innerHTML = "";
 }
 </script>
-
 </body>
 </html>
-

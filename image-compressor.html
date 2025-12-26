@@ -2,117 +2,117 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Image Compressor Tool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 :root {
-  --blue: #007bff;
-  --light-blue: #eaf3ff;
+  --blue: #0d6efd;
+  --light: #f5f9ff;
   --white: #ffffff;
-  --border: #dce9ff;
-}
-
-* {
-  box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 body {
   margin: 0;
-  background: var(--light-blue);
-  padding: 15px;
+  font-family: Arial, sans-serif;
+  background: var(--light);
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1100px;
   margin: auto;
-  background: var(--white);
   padding: 20px;
-  border-radius: 10px;
 }
 
 h1 {
   text-align: center;
   color: var(--blue);
-  margin-bottom: 10px;
+}
+
+.card {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 15px;
-}
-
-.controls input,
-.controls button {
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
+  gap: 15px;
+  align-items: center;
+  justify-content: space-between;
 }
 
 input[type="file"] {
-  flex: 1 1 220px;
-}
-
-.controls button {
-  background: var(--blue);
-  color: #fff;
-  cursor: pointer;
-  border: none;
-}
-
-.controls button.reset {
-  background: #dc3545;
+  padding: 10px;
 }
 
 .range-box {
-  width: 100%;
-  text-align: center;
-  margin-bottom: 15px;
+  flex: 1;
 }
 
-.range-box input {
+input[type="range"] {
   width: 100%;
 }
 
-.image-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 15px;
-}
-
-.image-card {
-  border: 1px solid var(--border);
-  padding: 10px;
+button {
+  background: var(--blue);
+  color: white;
+  border: none;
+  padding: 10px 18px;
   border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button.secondary {
+  background: #6c757d;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.preview-item {
+  background: var(--light);
+  border-radius: 10px;
+  padding: 10px;
   text-align: center;
 }
 
-.image-card img {
-  max-width: 100%;
-  height: 120px;
-  object-fit: contain;
+.preview-item img {
+  width: 100%;
+  border-radius: 8px;
 }
 
-.image-card p {
+.size-info {
   font-size: 13px;
-  margin: 5px 0;
+  margin: 8px 0;
 }
 
-.image-card a {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 13px;
-  color: var(--blue);
+.download-btn {
+  display: block;
+  margin-top: 8px;
   text-decoration: none;
+  background: var(--blue);
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
 @media (max-width: 600px) {
-  h1 {
-    font-size: 20px;
+  .controls {
+    flex-direction: column;
   }
 }
 </style>
@@ -123,77 +123,89 @@ input[type="file"] {
 <div class="container">
   <h1>Image Compressor</h1>
 
-  <div class="controls">
-    <input type="file" id="imageInput" accept="image/*" multiple>
-    <button onclick="compressImages()">Compress</button>
-    <button class="reset" onclick="resetTool()">Reset</button>
-  </div>
+  <div class="card">
+    <div class="controls">
+      <input type="file" id="upload" accept="image/*" multiple>
 
-  <div class="range-box">
-    <label><strong>Compression Quality:</strong> <span id="qualityValue">70%</span></label>
-    <input type="range" id="quality" min="10" max="100" value="70">
-  </div>
+      <div class="range-box">
+        <label>Compression Quality: <strong id="qualityValue">70%</strong></label>
+        <input type="range" id="quality" min="10" max="100" value="70">
+      </div>
 
-  <div class="image-list" id="imageList"></div>
+      <button onclick="resetAll()" class="secondary">Reset</button>
+    </div>
+
+    <div class="preview-grid" id="previewGrid"></div>
+  </div>
 </div>
 
 <script>
-const imageInput = document.getElementById('imageInput');
-const imageList = document.getElementById('imageList');
-const qualitySlider = document.getElementById('quality');
-const qualityValue = document.getElementById('qualityValue');
+const upload = document.getElementById("upload");
+const previewGrid = document.getElementById("previewGrid");
+const qualitySlider = document.getElementById("quality");
+const qualityValue = document.getElementById("qualityValue");
 
-qualitySlider.addEventListener('input', () => {
-  qualityValue.textContent = qualitySlider.value + '%';
+qualitySlider.addEventListener("input", () => {
+  qualityValue.textContent = qualitySlider.value + "%";
+  if (upload.files.length) processImages(upload.files);
 });
 
-function compressImages() {
-  imageList.innerHTML = '';
-  const files = imageInput.files;
-  if (!files.length) return alert("Please select images.");
+upload.addEventListener("change", () => {
+  previewGrid.innerHTML = "";
+  processImages(upload.files);
+});
+
+function processImages(files) {
+  previewGrid.innerHTML = "";
 
   [...files].forEach(file => {
     const reader = new FileReader();
+    reader.onload = e => compressImage(e.target.result, file);
     reader.readAsDataURL(file);
-    reader.onload = e => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        ctx.drawImage(img, 0, 0);
-
-        canvas.toBlob(blob => {
-          const compressedUrl = URL.createObjectURL(blob);
-          const sizeBefore = (file.size / 1024).toFixed(1);
-          const sizeAfter = (blob.size / 1024).toFixed(1);
-
-          imageList.innerHTML += `
-            <div class="image-card">
-              <img src="${compressedUrl}">
-              <p>${sizeBefore} KB → <strong>${sizeAfter} KB</strong></p>
-              <a href="${compressedUrl}" download="compressed-${file.name}">
-                Download
-              </a>
-            </div>
-          `;
-        }, 'image/jpeg', qualitySlider.value / 100);
-      };
-    };
   });
 }
 
-function resetTool() {
-  imageInput.value = '';
-  imageList.innerHTML = '';
-  qualitySlider.value = 70;
-  qualityValue.textContent = '70%';
+function compressImage(src, file) {
+  const img = new Image();
+  img.src = src;
+
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+
+    const quality = qualitySlider.value / 100;
+    const compressedData = canvas.toDataURL("image/jpeg", quality);
+
+    const originalSize = (file.size / 1024).toFixed(1);
+    const compressedSize = (compressedData.length / 1024).toFixed(1);
+
+    const div = document.createElement("div");
+    div.className = "preview-item";
+    div.innerHTML = `
+      <img src="${compressedData}">
+      <div class="size-info">
+        Original: ${originalSize} KB<br>
+        Compressed: ${compressedSize} KB
+      </div>
+      <a href="${compressedData}" download="compressed-${file.name}" class="download-btn">
+        Download
+      </a>
+    `;
+
+    previewGrid.appendChild(div);
+  };
+}
+
+function resetAll() {
+  upload.value = "";
+  previewGrid.innerHTML = "";
 }
 </script>
 
 </body>
 </html>
+

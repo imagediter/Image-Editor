@@ -10,165 +10,132 @@
   --blue: #007bff;
   --light-blue: #eaf4ff;
   --white: #ffffff;
-  --gray: #666;
-}
-
-* {
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
 }
 
 body {
+  font-family: Arial, sans-serif;
   background: var(--light-blue);
   margin: 0;
   padding: 20px;
 }
 
-.compressor-box {
+.container {
   max-width: 1000px;
   margin: auto;
-  background: var(--white);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-h1 {
+.compressor-box {
+  background: var(--white);
+  border: 2px dashed var(--blue);
+  border-radius: 10px;
+  padding: 20px;
   text-align: center;
+}
+
+.compressor-box h2 {
   color: var(--blue);
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .drop-zone {
-  border: 2px dashed var(--blue);
-  border-radius: 10px;
   padding: 30px;
-  text-align: center;
-  color: var(--gray);
+  border-radius: 8px;
+  background: #f9fbff;
   cursor: pointer;
-  transition: 0.3s;
-}
-
-.drop-zone:hover {
-  background: #f0f8ff;
+  border: 2px dashed var(--blue);
 }
 
 .drop-zone input {
   display: none;
 }
 
-.controls {
-  margin-top: 15px;
-  text-align: right;
-}
-
-button {
-  background: var(--blue);
-  color: var(--white);
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
 .image-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 15px;
   margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
 }
 
 .image-card {
   border: 1px solid #ddd;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px;
+  background: #fff;
 }
 
 .image-card img {
-  width: 100%;
+  max-width: 100%;
   height: 150px;
-  object-fit: cover;
-  border-radius: 6px;
+  object-fit: contain;
+  margin-bottom: 10px;
 }
 
-.image-info {
-  font-size: 13px;
-  margin: 6px 0;
-  color: var(--gray);
-}
-
-.image-actions {
+.controls {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.image-actions input {
-  width: 100%;
+.controls input {
   padding: 6px;
-  font-size: 13px;
 }
 
-.image-actions button {
-  flex: 1;
-  font-size: 13px;
+.controls button {
+  padding: 8px;
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.controls button:hover {
+  opacity: 0.9;
+}
+
+.delete-all {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: red;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 @media (max-width: 600px) {
-  h1 {
-    font-size: 20px;
+  .image-card img {
+    height: 120px;
   }
 }
 </style>
 </head>
+
 <body>
+<div class="container">
+  <div class="compressor-box">
+    <h2>Image Compressor</h2>
+    <p>Upload or Drag & Drop Images (Minimum 10KB)</p>
 
-<div class="compressor-box">
-  <h1>Image Compressor</h1>
+    <label class="drop-zone">
+      Click or Drag Images Here
+      <input type="file" multiple accept="image/*" id="fileInput">
+    </label>
 
-  <div class="drop-zone" id="dropZone">
-    <p><strong>Drag & Drop Images Here</strong><br>or Click to Upload</p>
-    <input type="file" id="fileInput" accept="image/*" multiple>
+    <div class="image-list" id="imageList"></div>
+
+    <button class="delete-all" onclick="clearAll()">Delete All</button>
   </div>
-
-  <div class="controls">
-    <button onclick="clearAll()">Delete All</button>
-  </div>
-
-  <div class="image-list" id="imageList"></div>
 </div>
 
 <script>
 const fileInput = document.getElementById("fileInput");
-const dropZone = document.getElementById("dropZone");
 const imageList = document.getElementById("imageList");
 
-dropZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", handleFiles);
 
-dropZone.addEventListener("dragover", e => {
-  e.preventDefault();
-  dropZone.style.background = "#f0f8ff";
-});
-
-dropZone.addEventListener("dragleave", () => {
-  dropZone.style.background = "";
-});
-
-dropZone.addEventListener("drop", e => {
-  e.preventDefault();
-  dropZone.style.background = "";
-  handleFiles(e.dataTransfer.files);
-});
-
-fileInput.addEventListener("change", () => handleFiles(fileInput.files));
-
-function handleFiles(files) {
-  [...files].forEach(file => createImageCard(file));
+function handleFiles() {
+  [...fileInput.files].forEach(file => createImageCard(file));
 }
 
 function createImageCard(file) {
@@ -179,35 +146,26 @@ function createImageCard(file) {
 
     card.innerHTML = `
       <img src="${e.target.result}">
-      <div class="image-info">
-        Original: ${(file.size / 1024).toFixed(1)} KB
-      </div>
-      <div class="image-actions">
-        <input type="number" min="10" value="100" placeholder="Target KB">
+      <div class="controls">
+        <small>Original: ${(file.size / 1024).toFixed(1)} KB</small>
+        <input type="number" min="10" value="50" placeholder="Target KB">
         <button>Compress</button>
-        <button disabled>Download</button>
+        <a style="display:none" download>Download</a>
       </div>
     `;
 
     const inputKB = card.querySelector("input");
-    const compressBtn = card.querySelectorAll("button")[0];
-    const downloadBtn = card.querySelectorAll("button")[1];
+    const btn = card.querySelector("button");
+    const link = card.querySelector("a");
+    const img = card.querySelector("img");
 
-    compressBtn.onclick = async () => {
+    btn.onclick = async () => {
       const targetKB = Math.max(10, inputKB.value);
-      const compressedBlob = await compressImage(file, targetKB);
-      const url = URL.createObjectURL(compressedBlob);
-      card.querySelector("img").src = url;
-      card.querySelector(".image-info").innerText =
-        `Compressed: ${(compressedBlob.size / 1024).toFixed(1)} KB`;
-      downloadBtn.disabled = false;
-
-      downloadBtn.onclick = () => {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "compressed-" + file.name;
-        a.click();
-      };
+      const blob = await compressImage(img, targetKB);
+      link.href = URL.createObjectURL(blob);
+      link.style.display = "block";
+      link.textContent = "Download";
+      link.download = "compressed-image.jpg";
     };
 
     imageList.appendChild(card);
@@ -215,21 +173,19 @@ function createImageCard(file) {
   reader.readAsDataURL(file);
 }
 
-async function compressImage(file, targetKB) {
-  const img = await loadImage(file);
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+async function compressImage(img, targetKB) {
+  let quality = 0.9;
+  let canvas = document.createElement("canvas");
+  let ctx = canvas.getContext("2d");
 
-  canvas.width = img.width;
-  canvas.height = img.height;
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
   ctx.drawImage(img, 0, 0);
 
-  let quality = 0.9;
   let blob;
-
   do {
-    blob = await new Promise(resolve =>
-      canvas.toBlob(resolve, "image/jpeg", quality)
+    blob = await new Promise(res =>
+      canvas.toBlob(res, "image/jpeg", quality)
     );
     quality -= 0.05;
   } while (blob.size / 1024 > targetKB && quality > 0.1);
@@ -237,19 +193,10 @@ async function compressImage(file, targetKB) {
   return blob;
 }
 
-function loadImage(file) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = URL.createObjectURL(file);
-  });
-}
-
 function clearAll() {
   imageList.innerHTML = "";
   fileInput.value = "";
 }
 </script>
-
 </body>
 </html>

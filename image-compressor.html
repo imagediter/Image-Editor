@@ -3,106 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Image Compressor</title>
+<title>Image Compressor Tool</title>
 
 <style>
 :root {
   --blue: #007bff;
-  --light-blue: #eaf3ff;
+  --light-blue: #e9f3ff;
   --white: #ffffff;
+  --border: #d0e3ff;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
 }
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
   background: var(--light-blue);
+  padding: 15px;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: auto;
-  padding: 15px;
+  background: var(--white);
+  border-radius: 12px;
+  padding: 20px;
 }
 
 h1 {
   text-align: center;
   color: var(--blue);
+  margin-bottom: 15px;
 }
 
+/* Upload Box */
 .upload-box {
-  background: var(--white);
-  padding: 20px;
-  border-radius: 10px;
-  text-align: center;
   border: 2px dashed var(--blue);
+  padding: 25px;
+  text-align: center;
+  border-radius: 10px;
+  background: #f8fbff;
+  cursor: pointer;
 }
 
-input[type="file"] {
-  margin-top: 10px;
+.upload-box.dragover {
+  background: #dcecff;
 }
 
-.images-grid {
+.upload-box input {
+  display: none;
+}
+
+/* Buttons */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 15px;
+  gap: 10px;
+}
+
+button {
+  background: var(--blue);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* Image Grid */
+.image-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 15px;
   margin-top: 20px;
 }
 
 .image-card {
-  background: var(--white);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 .image-card img {
   width: 100%;
-  border-radius: 8px;
-  max-height: 200px;
+  height: 150px;
   object-fit: cover;
-}
-
-.controls {
-  margin-top: 10px;
-}
-
-.controls label {
-  font-size: 14px;
-  color: #333;
-}
-
-.controls input {
-  width: 100%;
-}
-
-.btn {
-  margin-top: 8px;
-  width: 100%;
-  padding: 8px;
-  border: none;
   border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
 }
 
-.download {
-  background: var(--blue);
-  color: var(--white);
+.image-info {
+  font-size: 13px;
+  margin: 6px 0;
 }
 
-.delete-all {
-  background: red;
-  color: white;
-  margin-top: 20px;
-  padding: 10px;
-  width: 100%;
-  border-radius: 8px;
+.image-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.image-actions input {
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
+.download-btn {
+  background: #28a745;
 }
 
 @media (max-width: 600px) {
-  h1 {
-    font-size: 22px;
-  }
+  h1 { font-size: 22px; }
 }
 </style>
 </head>
@@ -112,98 +131,108 @@ input[type="file"] {
 <div class="container">
   <h1>Image Compressor</h1>
 
-  <div class="upload-box">
-    <p>Upload Images (Bulk Supported)</p>
-    <input type="file" id="upload" accept="image/*" multiple>
+  <div class="upload-box" id="uploadBox">
+    <p><strong>Drag & Drop Images Here</strong><br>or Click to Upload</p>
+    <input type="file" id="fileInput" multiple accept="image/*">
   </div>
 
-  <div class="images-grid" id="imageContainer"></div>
+  <div class="controls">
+    <button onclick="deleteAll()">Delete All</button>
+  </div>
 
-  <button class="delete-all" onclick="resetAll()">Delete All Images</button>
+  <div class="image-list" id="imageList"></div>
 </div>
 
 <script>
-const upload = document.getElementById("upload");
-const container = document.getElementById("imageContainer");
+const uploadBox = document.getElementById("uploadBox");
+const fileInput = document.getElementById("fileInput");
+const imageList = document.getElementById("imageList");
 
-upload.addEventListener("change", () => {
-  [...upload.files].forEach(file => createCard(file));
+uploadBox.onclick = () => fileInput.click();
+
+uploadBox.addEventListener("dragover", e => {
+  e.preventDefault();
+  uploadBox.classList.add("dragover");
 });
 
-function createCard(file) {
+uploadBox.addEventListener("dragleave", () => {
+  uploadBox.classList.remove("dragover");
+});
+
+uploadBox.addEventListener("drop", e => {
+  e.preventDefault();
+  uploadBox.classList.remove("dragover");
+  handleFiles(e.dataTransfer.files);
+});
+
+fileInput.onchange = () => handleFiles(fileInput.files);
+
+function handleFiles(files) {
+  [...files].forEach(file => {
+    if (!file.type.startsWith("image")) return;
+
+    const reader = new FileReader();
+    reader.onload = e => createImageCard(e.target.result, file);
+    reader.readAsDataURL(file);
+  });
+}
+
+function createImageCard(src, file) {
   const card = document.createElement("div");
   card.className = "image-card";
 
-  const img = document.createElement("img");
-  const reader = new FileReader();
+  card.innerHTML = `
+    <img src="${src}">
+    <div class="image-info">
+      Original: ${(file.size / 1024).toFixed(1)} KB
+    </div>
+    <div class="image-actions">
+      <input type="number" min="10" value="100" placeholder="Target KB">
+      <button>Compress</button>
+      <a style="display:none" download>
+        <button class="download-btn">Download</button>
+      </a>
+    </div>
+  `;
 
-  reader.onload = e => img.src = e.target.result;
-  reader.readAsDataURL(file);
+  const inputKB = card.querySelector("input");
+  const compressBtn = card.querySelector("button");
+  const downloadLink = card.querySelector("a");
 
-  const controls = document.createElement("div");
-  controls.className = "controls";
+  compressBtn.onclick = () => compressImage(src, inputKB.value, downloadLink);
 
-  const label = document.createElement("label");
-  label.textContent = "Target Size (KB):";
-
-  const range = document.createElement("input");
-  range.type = "range";
-  range.min = 20;
-  range.max = 1000;
-  range.value = 200;
-
-  const sizeText = document.createElement("div");
-  sizeText.textContent = "200 KB";
-
-  range.oninput = () => sizeText.textContent = range.value + " KB";
-
-  const downloadBtn = document.createElement("button");
-  downloadBtn.className = "btn download";
-  downloadBtn.textContent = "Compress & Download";
-
-  downloadBtn.onclick = () => compressImage(img, range.value, file.name);
-
-  controls.append(label, range, sizeText, downloadBtn);
-  card.append(img, controls);
-  container.appendChild(card);
+  imageList.appendChild(card);
 }
 
-function compressImage(img, targetKB, filename) {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+function compressImage(src, targetKB, downloadLink) {
+  targetKB = Math.max(10, targetKB);
 
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  ctx.drawImage(img, 0, 0);
+  const img = new Image();
+  img.src = src;
 
-  let quality = 0.9;
-  let blob;
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
-  const compressLoop = () => {
-    canvas.toBlob(b => {
-      blob = b;
-      if (blob.size / 1024 > targetKB && quality > 0.1) {
-        quality -= 0.05;
-        compressLoop();
-      } else {
-        downloadBlob(blob, filename);
-      }
-    }, "image/jpeg", quality);
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+
+    let quality = 0.9;
+    let compressed;
+
+    do {
+      compressed = canvas.toDataURL("image/jpeg", quality);
+      quality -= 0.05;
+    } while ((compressed.length / 1024) > targetKB && quality > 0.05);
+
+    downloadLink.href = compressed;
+    downloadLink.style.display = "block";
   };
-
-  compressLoop();
 }
 
-function downloadBlob(blob, filename) {
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "compressed-" + filename;
-  link.click();
-}
-
-function resetAll() {
-  container.innerHTML = "";
-  upload.value = "";
+function deleteAll() {
+  imageList.innerHTML = "";
 }
 </script>
 

@@ -10,26 +10,26 @@
   --blue: #007bff;
   --light-blue: #e9f3ff;
   --white: #ffffff;
-  --border: #d0e3ff;
-}
-
-* {
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
 }
 
 body {
   margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
   background: var(--light-blue);
-  padding: 15px;
 }
 
 .container {
   max-width: 1100px;
   margin: auto;
-  background: var(--white);
-  border-radius: 12px;
   padding: 20px;
+}
+
+.compressor-box {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 20px;
+  border: 2px dashed var(--blue);
 }
 
 h1 {
@@ -38,90 +38,90 @@ h1 {
   margin-bottom: 15px;
 }
 
-/* Upload Box */
-.upload-box {
-  border: 2px dashed var(--blue);
-  padding: 25px;
+.upload-area {
   text-align: center;
-  border-radius: 10px;
-  background: #f8fbff;
+  padding: 30px;
+  border: 2px dashed var(--blue);
+  border-radius: 8px;
+  background: #f7fbff;
   cursor: pointer;
 }
 
-.upload-box.dragover {
-  background: #dcecff;
+.upload-area p {
+  color: #333;
+  margin: 0;
 }
 
-.upload-box input {
+.upload-area input {
   display: none;
 }
 
-/* Buttons */
 .controls {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
   margin-top: 15px;
-  gap: 10px;
 }
 
 button {
   background: var(--blue);
   color: white;
   border: none;
-  padding: 10px 15px;
+  padding: 10px 16px;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 14px;
 }
 
-button:hover {
-  opacity: 0.9;
+button.danger {
+  background: #dc3545;
 }
 
-/* Image Grid */
 .image-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 15px;
   margin-top: 20px;
 }
 
 .image-card {
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
   padding: 10px;
+  text-align: center;
+  background: #fff;
 }
 
 .image-card img {
-  width: 100%;
-  height: 150px;
+  max-width: 100%;
+  height: 140px;
   object-fit: cover;
   border-radius: 6px;
 }
 
-.image-info {
-  font-size: 13px;
-  margin: 6px 0;
+.size-control {
+  margin: 8px 0;
 }
 
-.image-actions {
+.size-control input {
+  width: 100%;
+}
+
+.card-buttons {
   display: flex;
-  flex-direction: column;
   gap: 6px;
 }
 
-.image-actions input {
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-}
-
-.download-btn {
-  background: #28a745;
+.card-buttons button {
+  flex: 1;
+  font-size: 12px;
+  padding: 8px;
 }
 
 @media (max-width: 600px) {
-  h1 { font-size: 22px; }
+  .upload-area {
+    padding: 20px;
+  }
 }
 </style>
 </head>
@@ -129,86 +129,91 @@ button:hover {
 <body>
 
 <div class="container">
-  <h1>Image Compressor</h1>
+  <div class="compressor-box">
+    <h1>Image Compressor</h1>
 
-  <div class="upload-box" id="uploadBox">
-    <p><strong>Drag & Drop Images Here</strong><br>or Click to Upload</p>
-    <input type="file" id="fileInput" multiple accept="image/*">
+    <label class="upload-area" id="dropArea">
+      <p>📤 Click or Drag & Drop Images Here</p>
+      <input type="file" id="fileInput" multiple accept="image/*">
+    </label>
+
+    <div class="controls">
+      <span></span>
+      <button class="danger" onclick="deleteAll()">Delete All</button>
+    </div>
+
+    <div class="image-list" id="imageList"></div>
   </div>
-
-  <div class="controls">
-    <button onclick="deleteAll()">Delete All</button>
-  </div>
-
-  <div class="image-list" id="imageList"></div>
 </div>
 
 <script>
-const uploadBox = document.getElementById("uploadBox");
 const fileInput = document.getElementById("fileInput");
 const imageList = document.getElementById("imageList");
+const dropArea = document.getElementById("dropArea");
 
-uploadBox.onclick = () => fileInput.click();
+fileInput.addEventListener("change", e => handleFiles(e.target.files));
 
-uploadBox.addEventListener("dragover", e => {
+dropArea.addEventListener("dragover", e => {
   e.preventDefault();
-  uploadBox.classList.add("dragover");
+  dropArea.style.background = "#dcecff";
 });
 
-uploadBox.addEventListener("dragleave", () => {
-  uploadBox.classList.remove("dragover");
+dropArea.addEventListener("dragleave", () => {
+  dropArea.style.background = "#f7fbff";
 });
 
-uploadBox.addEventListener("drop", e => {
+dropArea.addEventListener("drop", e => {
   e.preventDefault();
-  uploadBox.classList.remove("dragover");
+  dropArea.style.background = "#f7fbff";
   handleFiles(e.dataTransfer.files);
 });
 
-fileInput.onchange = () => handleFiles(fileInput.files);
-
 function handleFiles(files) {
-  [...files].forEach(file => {
-    if (!file.type.startsWith("image")) return;
-
-    const reader = new FileReader();
-    reader.onload = e => createImageCard(e.target.result, file);
-    reader.readAsDataURL(file);
-  });
+  [...files].forEach(file => createImageCard(file));
 }
 
-function createImageCard(src, file) {
+function createImageCard(file) {
   const card = document.createElement("div");
   card.className = "image-card";
 
-  card.innerHTML = `
-    <img src="${src}">
-    <div class="image-info">
-      Original: ${(file.size / 1024).toFixed(1)} KB
-    </div>
-    <div class="image-actions">
-      <input type="number" min="10" value="100" placeholder="Target KB">
-      <button>Compress</button>
-      <a style="display:none" download>
-        <button class="download-btn">Download</button>
-      </a>
-    </div>
-  `;
+  const img = document.createElement("img");
+  img.src = URL.createObjectURL(file);
 
-  const inputKB = card.querySelector("input");
-  const compressBtn = card.querySelector("button");
-  const downloadLink = card.querySelector("a");
+  const sizeControl = document.createElement("div");
+  sizeControl.className = "size-control";
 
-  compressBtn.onclick = () => compressImage(src, inputKB.value, downloadLink);
+  const label = document.createElement("label");
+  label.textContent = "Target Size (KB)";
 
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = 10;
+  input.value = 100;
+
+  sizeControl.append(label, input);
+
+  const btns = document.createElement("div");
+  btns.className = "card-buttons";
+
+  const downloadBtn = document.createElement("button");
+  downloadBtn.textContent = "Download";
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "Delete";
+  deleteBtn.className = "danger";
+
+  btns.append(downloadBtn, deleteBtn);
+
+  card.append(img, sizeControl, btns);
   imageList.appendChild(card);
+
+  downloadBtn.onclick = () => compressAndDownload(file, input.value);
+  deleteBtn.onclick = () => card.remove();
 }
 
-function compressImage(src, targetKB, downloadLink) {
-  targetKB = Math.max(10, targetKB);
-
+function compressAndDownload(file, targetKB) {
   const img = new Image();
-  img.src = src;
+  img.src = URL.createObjectURL(file);
 
   img.onload = () => {
     const canvas = document.createElement("canvas");
@@ -224,10 +229,12 @@ function compressImage(src, targetKB, downloadLink) {
     do {
       compressed = canvas.toDataURL("image/jpeg", quality);
       quality -= 0.05;
-    } while ((compressed.length / 1024) > targetKB && quality > 0.05);
+    } while ((compressed.length / 1024) > targetKB && quality > 0.1);
 
-    downloadLink.href = compressed;
-    downloadLink.style.display = "block";
+    const link = document.createElement("a");
+    link.href = compressed;
+    link.download = "compressed-image.jpg";
+    link.click();
   };
 }
 

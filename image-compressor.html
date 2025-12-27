@@ -1,202 +1,228 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Image Compressor Tool</title>
-
-<style>
-:root {
-  --blue: #007bff;
-  --light-blue: #eaf4ff;
-  --white: #ffffff;
-}
-
-body {
-  font-family: Arial, sans-serif;
-  background: var(--light-blue);
-  margin: 0;
-  padding: 20px;
-}
-
-.container {
-  max-width: 1000px;
-  margin: auto;
-}
-
-.compressor-box {
-  background: var(--white);
-  border: 2px dashed var(--blue);
-  border-radius: 10px;
-  padding: 20px;
-  text-align: center;
-}
-
-.compressor-box h2 {
-  color: var(--blue);
-  margin-bottom: 10px;
-}
-
-.drop-zone {
-  padding: 30px;
-  border-radius: 8px;
-  background: #f9fbff;
-  cursor: pointer;
-  border: 2px dashed var(--blue);
-}
-
-.drop-zone input {
-  display: none;
-}
-
-.image-list {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 15px;
-}
-
-.image-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px;
-  background: #fff;
-}
-
-.image-card img {
-  max-width: 100%;
-  height: 150px;
-  object-fit: contain;
-  margin-bottom: 10px;
-}
-
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.controls input {
-  padding: 6px;
-}
-
-.controls button {
-  padding: 8px;
-  background: var(--blue);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.controls button:hover {
-  opacity: 0.9;
-}
-
-.delete-all {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background: red;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-@media (max-width: 600px) {
-  .image-card img {
-    height: 120px;
-  }
-}
-</style>
-</head>
-
-<body>
-<div class="container">
-  <div class="compressor-box">
-    <h2>Image Compressor</h2>
-    <p>Upload or Drag & Drop Images (Minimum 10KB)</p>
-
-    <label class="drop-zone">
-      Click or Drag Images Here
-      <input type="file" multiple accept="image/*" id="fileInput">
-    </label>
-
-    <div class="image-list" id="imageList"></div>
-
-    <button class="delete-all" onclick="clearAll()">Delete All</button>
-  </div>
-</div>
-
 <script>
-const fileInput = document.getElementById("fileInput");
-const imageList = document.getElementById("imageList");
+/* =======================
+   ELEMENT REFERENCES
+======================= */
+const uploadArea = document.getElementById('uploadArea');
+const browseBtn = document.getElementById('browseBtn');
+const fileInput = document.getElementById('fileInput');
 
-fileInput.addEventListener("change", handleFiles);
+const qualitySlider = document.getElementById('qualitySlider');
+const qualityValue = document.getElementById('qualityValue');
+const sizeSlider = document.getElementById('sizeSlider');
+const sizeValue = document.getElementById('sizeValue');
 
-function handleFiles() {
-  [...fileInput.files].forEach(file => createImageCard(file));
+const compressAllBtn = document.getElementById('compressAllBtn');
+const downloadAllBtn = document.getElementById('downloadAllBtn');
+const deleteAllBtn = document.getElementById('deleteAllBtn');
+
+const imageList = document.getElementById('imageList');
+const emptyState = document.getElementById('emptyState');
+
+/* =======================
+   GLOBAL STATE
+======================= */
+let images = [];
+let nextId = 1;
+
+/* =======================
+   HELPERS
+======================= */
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-function createImageCard(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const card = document.createElement("div");
-    card.className = "image-card";
+function updateSliders() {
+    qualityValue.textContent = qualitySlider.value + '%';
+    sizeValue.textContent = sizeSlider.value + ' KB';
+}
 
-    card.innerHTML = `
-      <img src="${e.target.result}">
-      <div class="controls">
-        <small>Original: ${(file.size / 1024).toFixed(1)} KB</small>
-        <input type="number" min="10" value="50" placeholder="Target KB">
-        <button>Compress</button>
-        <a style="display:none" download>Download</a>
-      </div>
-    `;
+/* =======================
+   EVENTS
+======================= */
+browseBtn.onclick = () => fileInput.click();
+fileInput.onchange = handleFiles;
 
-    const inputKB = card.querySelector("input");
-    const btn = card.querySelector("button");
-    const link = card.querySelector("a");
-    const img = card.querySelector("img");
+qualitySlider.oninput = updateSliders;
+sizeSlider.oninput = updateSliders;
 
-    btn.onclick = async () => {
-      const targetKB = Math.max(10, inputKB.value);
-      const blob = await compressImage(img, targetKB);
-      link.href = URL.createObjectURL(blob);
-      link.style.display = "block";
-      link.textContent = "Download";
-      link.download = "compressed-image.jpg";
+compressAllBtn.onclick = () => {
+    images.filter(i => !i.compressed).forEach(i => compressImage(i.id));
+};
+
+downloadAllBtn.onclick = downloadAll;
+deleteAllBtn.onclick = deleteAll;
+
+/* Drag & Drop */
+['dragover', 'dragleave', 'drop'].forEach(evt => {
+    uploadArea.addEventListener(evt, e => e.preventDefault());
+});
+
+uploadArea.addEventListener('dragover', () => uploadArea.classList.add('dragover'));
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
+    uploadArea.classList.remove('dragover');
+    handleFiles({ target: { files: e.dataTransfer.files } });
+});
+
+/* =======================
+   FILE HANDLING
+======================= */
+function handleFiles(e) {
+    const files = [...e.target.files].slice(0, 10);
+
+    files.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        if (file.size > 20 * 1024 * 1024) return;
+
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const img = new Image();
+            img.onload = () => {
+                images.push({
+                    id: nextId++,
+                    name: file.name,
+                    originalSize: file.size,
+                    width: img.width,
+                    height: img.height,
+                    src: ev.target.result,
+                    compressed: false,
+                    compressedSrc: null,
+                    compressedSize: 0
+                });
+                render();
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    fileInput.value = '';
+}
+
+/* =======================
+   COMPRESSION
+======================= */
+function compressImage(id) {
+    const image = images.find(i => i.id === id);
+    if (!image || image.compressed) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.onload = () => {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.drawImage(img, 0, 0);
+
+        const targetBytes = Math.max(sizeSlider.value * 1024, 10 * 1024);
+        let quality = qualitySlider.value / 100;
+        let output, size;
+
+        for (let i = 0; i < 10; i++) {
+            output = canvas.toDataURL('image/jpeg', quality);
+            size = Math.round((output.length * 3) / 4);
+            if (size <= targetBytes) break;
+            quality -= 0.08;
+        }
+
+        if (size < 10 * 1024) {
+            output = canvas.toDataURL('image/jpeg', 0.3);
+            size = Math.round((output.length * 3) / 4);
+        }
+
+        image.compressed = true;
+        image.compressedSrc = output;
+        image.compressedSize = size;
+
+        render();
     };
-
-    imageList.appendChild(card);
-  };
-  reader.readAsDataURL(file);
+    img.src = image.src;
 }
 
-async function compressImage(img, targetKB) {
-  let quality = 0.9;
-  let canvas = document.createElement("canvas");
-  let ctx = canvas.getContext("2d");
-
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  ctx.drawImage(img, 0, 0);
-
-  let blob;
-  do {
-    blob = await new Promise(res =>
-      canvas.toBlob(res, "image/jpeg", quality)
-    );
-    quality -= 0.05;
-  } while (blob.size / 1024 > targetKB && quality > 0.1);
-
-  return blob;
+/* =======================
+   DOWNLOADS
+======================= */
+function downloadOne(image) {
+    const a = document.createElement('a');
+    a.href = image.compressedSrc;
+    a.download = 'compressed_' + image.name;
+    a.click();
 }
 
-function clearAll() {
-  imageList.innerHTML = "";
-  fileInput.value = "";
+function downloadAll() {
+    const list = images.filter(i => i.compressed);
+    if (!list.length) return alert('Compress images first');
+
+    list.forEach((img, i) => {
+        setTimeout(() => downloadOne(img), i * 300);
+    });
 }
+
+/* =======================
+   DELETE
+======================= */
+function deleteAll() {
+    if (!images.length) return;
+    if (!confirm('Delete all images?')) return;
+    images = [];
+    render();
+}
+
+function deleteOne(id) {
+    images = images.filter(i => i.id !== id);
+    render();
+}
+
+/* =======================
+   UI RENDER
+======================= */
+function render() {
+    imageList.innerHTML = '';
+
+    if (!images.length) {
+        imageList.appendChild(emptyState);
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+
+    images.forEach(img => {
+        const div = document.createElement('div');
+        div.className = 'image-card';
+
+        div.innerHTML = `
+            <img src="${img.src}" class="image-preview">
+            <div class="image-info">
+                <div>${img.name}</div>
+                <div>${img.width}×${img.height}</div>
+            </div>
+            <div class="image-info">
+                <div>Original: <span>${formatSize(img.originalSize)}</span></div>
+                <div>Compressed: <span>${img.compressed ? formatSize(img.compressedSize) : '—'}</span></div>
+            </div>
+            <div class="card-actions">
+                <button class="card-btn card-compress" ${img.compressed ? 'disabled' : ''}>
+                    Compress
+                </button>
+                <button class="card-btn card-download" ${!img.compressed ? 'disabled' : ''}>
+                    Download
+                </button>
+                <button class="card-btn card-delete">Delete</button>
+            </div>
+        `;
+
+        div.querySelector('.card-compress').onclick = () => compressImage(img.id);
+        div.querySelector('.card-download').onclick = () => downloadOne(img);
+        div.querySelector('.card-delete').onclick = () => deleteOne(img.id);
+
+        imageList.appendChild(div);
+    });
+}
+
+updateSliders();
+render();
 </script>
-</body>
-</html>

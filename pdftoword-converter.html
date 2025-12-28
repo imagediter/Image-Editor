@@ -1,349 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF ↔ Word Converter | Professional Multi-Tool</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-    <script src="https://unpkg.com/docx@8.2.2/build/index.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<meta charset="UTF-8">
+<title>PDF ↔ Word Converter | Advanced Tool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        :root {
-            --primary: #0066ff;
-            --primary-dark: #0044bb;
-            --success: #28a745;
-            --error: #dc3545;
-            --warning: #ffc107;
-            --bg: #f5f7fa;
-            --card-bg: white;
-            --text: #333;
-            --text-light: #666;
-            --border: #e2e8f0;
-            --progress: #4CAF50;
-        }
+<!-- ICONS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        body { background-color: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; }
+<!-- LIBRARIES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.2/index.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-        header {
-            text-align: center;
-            padding: 40px 20px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-        .converter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
-
-        .card {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease;
-        }
-
-        .card h2 { color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-
-        .drop-zone {
-            border: 2px dashed var(--border);
-            border-radius: 10px;
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            background: #fcfcfc;
-            margin-bottom: 20px;
-            min-height: 180px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .drop-zone.active { border-color: var(--primary); background: #f0f7ff; }
-        .drop-zone i { font-size: 3rem; color: var(--primary); margin-bottom: 15px; }
-
-        .file-info { background: #edf2f7; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; display: none; font-size: 0.9rem; }
-        .file-info.valid { border-left: 4px solid var(--success); }
-
-        .controls-section { margin: 15px 0; padding: 15px; background: #f8fafc; border-radius: 8px; display: none; }
-        .controls-section.active { display: block; }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-
-        .progress-container { display: none; margin: 15px 0; }
-        .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--progress); width: 0%; transition: width 0.3s; }
-
-        .error-message { background: #fee; color: var(--error); padding: 10px; border-radius: 6px; margin: 10px 0; display: none; }
-
-        /* Hidden but accessible for html2pdf */
-        #preview-container { 
-            position: absolute; 
-            left: -9999px; 
-            top: 0; 
-            width: 800px; 
-            background: white;
-        }
-
-        .loader {
-            display: none;
-            width: 18px;
-            height: 18px;
-            border: 2px solid #fff;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .format-selector { display: flex; gap: 10px; margin-bottom: 15px; }
-        .format-option { flex: 1; padding: 8px; border: 1px solid var(--border); text-align: center; cursor: pointer; border-radius: 5px; }
-        .format-option.active { background: var(--primary); color: white; border-color: var(--primary); }
-    </style>
+<style>
+:root{
+--blue:#0066ff;
+--dark:#0044cc;
+--bg:#f4f7fb;
+--card:#fff;
+--border:#e2e8f0;
+}
+*{box-sizing:border-box;font-family:Segoe UI,Roboto}
+body{margin:0;background:var(--bg);padding:20px}
+.container{max-width:1200px;margin:auto}
+header{
+background:linear-gradient(135deg,var(--blue),var(--dark));
+color:#fff;padding:35px;border-radius:16px;text-align:center
+}
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+gap:25px;margin-top:30px
+}
+.card{
+background:var(--card);padding:25px;border-radius:14px;
+box-shadow:0 10px 25px rgba(0,0,0,.08)
+}
+.card h2{color:var(--blue)}
+.drop{
+border:2px dashed var(--border);
+padding:35px;border-radius:12px;
+text-align:center;cursor:pointer
+}
+.drop i{font-size:38px;color:var(--blue)}
+button{
+width:100%;padding:14px;
+border:none;border-radius:10px;
+background:var(--blue);color:#fff;
+font-size:16px;font-weight:600;
+margin-top:12px;cursor:pointer
+}
+button:disabled{background:#ccc}
+.progress{height:8px;background:#eee;border-radius:10px;overflow:hidden;margin-top:10px}
+.progress span{display:block;height:100%;width:0;background:#28a745}
+small{color:#555}
+#preview{position:absolute;left:-9999px;width:800px}
+</style>
 </head>
+
 <body>
-
 <div class="container">
-    <header>
-        <h1><i class="fas fa-sync"></i> Advanced PDF ↔ Word Converter</h1>
-        <p>100% Private Browser-Side Conversion</p>
-    </header>
 
-    <div class="converter-grid">
-        <div class="card">
-            <h2><i class="fas fa-file-pdf"></i> PDF to Word</h2>
-            <div class="format-selector" id="pdf-format-selector">
-                <div class="format-option active" data-format="docx">Word (.docx)</div>
-                <div class="format-option" data-format="txt">Text (.txt)</div>
-            </div>
-            <div class="drop-zone" id="pdf-drop">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>Click or Drop PDF</p>
-                <input type="file" id="pdf-input" accept=".pdf,.txt" hidden multiple>
-            </div>
-            <div id="pdf-file-info" class="file-info"></div>
-            <div class="error-message" id="pdf-error"></div>
-            
-            <div class="progress-container" id="pdf-progress">
-                <div class="progress-bar"><div class="progress-fill" id="pdf-progress-fill"></div></div>
-                <div id="pdf-progress-text" style="font-size: 12px; text-align: center;">0%</div>
-            </div>
+<header>
+<h1><i class="fas fa-sync"></i> PDF ↔ Word Converter</h1>
+<p>OCR • Password PDF • Bulk Conversion • 100% Browser-Side</p>
+</header>
 
-            <button id="btn-pdf" class="btn btn-primary" disabled>
-                <div class="loader" id="pdf-loader"></div>
-                <span>Convert PDF</span>
-            </button>
-            <div id="pdf-result" style="margin-top:10px"></div>
-        </div>
+<div class="grid">
 
-        <div class="card">
-            <h2><i class="fas fa-file-word"></i> Word to PDF</h2>
-            <div class="drop-zone" id="word-drop">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>Click or Drop Word (.docx)</p>
-                <input type="file" id="word-input" accept=".docx" hidden multiple>
-            </div>
-            <div id="word-file-info" class="file-info"></div>
-            <div class="error-message" id="word-error"></div>
+<!-- PDF TO WORD -->
+<div class="card">
+<h2><i class="fas fa-file-pdf"></i> PDF → Word</h2>
 
-            <div class="progress-container" id="word-progress">
-                <div class="progress-bar"><div class="progress-fill" id="word-progress-fill"></div></div>
-                <div id="word-progress-text" style="font-size: 12px; text-align: center;">0%</div>
-            </div>
+<div class="drop" id="pdfDrop">
+<i class="fas fa-cloud-upload-alt"></i>
+<p>Drop PDF or Click</p>
+<input type="file" id="pdfInput" hidden multiple accept=".pdf">
+</div>
 
-            <button id="btn-word" class="btn btn-primary" disabled>
-                <div class="loader" id="word-loader"></div>
-                <span>Convert to PDF</span>
-            </button>
-            <div id="word-result" style="margin-top:10px"></div>
-        </div>
-    </div>
+<input id="pdfPassword" placeholder="PDF Password (optional)" style="width:100%;padding:10px;margin-top:10px">
 
-    <div id="preview-container"></div>
+<label><input type="checkbox" id="useOCR"> Enable OCR (Scanned PDFs)</label>
+
+<button id="pdfBtn" disabled>Convert PDF</button>
+<div class="progress"><span id="pdfProg"></span></div>
+</div>
+
+<!-- WORD TO PDF -->
+<div class="card">
+<h2><i class="fas fa-file-word"></i> Word → PDF</h2>
+
+<div class="drop" id="wordDrop">
+<i class="fas fa-cloud-upload-alt"></i>
+<p>Drop DOCX or Click</p>
+<input type="file" id="wordInput" hidden multiple accept=".docx">
+</div>
+
+<button id="wordBtn" disabled>Convert Word</button>
+<div class="progress"><span id="wordProg"></span></div>
+</div>
+
+</div>
+<div id="preview"></div>
 </div>
 
 <script>
-    // Initialize PDF.js
-    const pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-    let pdfFiles = [];
-    let wordFiles = [];
-    let pdfOutputFormat = 'docx';
+let pdfFiles=[],wordFiles=[];
 
-    // Dropzone Setup
-    setupDropZone('pdf-drop', 'pdf-input', (files) => {
-        pdfFiles = Array.from(files);
-        updateFileInfo('pdf-file-info', pdfFiles);
-        document.getElementById('btn-pdf').disabled = false;
-    });
+/* DROP ZONES */
+const bindDrop=(box,input,cb)=>{
+box.onclick=()=>input.click();
+box.ondragover=e=>{e.preventDefault();box.style.borderColor='#0066ff'}
+box.ondragleave=()=>box.style.borderColor='';
+box.ondrop=e=>{
+e.preventDefault();box.style.borderColor='';
+cb([...e.dataTransfer.files])
+};
+input.onchange=()=>cb([...input.files]);
+};
 
-    setupDropZone('word-drop', 'word-input', (files) => {
-        wordFiles = Array.from(files);
-        updateFileInfo('word-file-info', wordFiles);
-        document.getElementById('btn-word').disabled = false;
-    });
+bindDrop(pdfDrop,pdfInput,f=>{pdfFiles=f;pdfBtn.disabled=false});
+bindDrop(wordDrop,wordInput,f=>{wordFiles=f;wordBtn.disabled=false});
 
-    function setupDropZone(zoneId, inputId, callback) {
-        const zone = document.getElementById(zoneId);
-        const input = document.getElementById(inputId);
-        zone.onclick = () => input.click();
-        zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('active'); };
-        zone.ondragleave = () => zone.classList.remove('active');
-        zone.ondrop = (e) => { e.preventDefault(); zone.classList.remove('active'); callback(e.dataTransfer.files); };
-        input.onchange = () => callback(input.files);
-    }
+/* PDF → WORD */
+pdfBtn.onclick=async()=>{
+const zip=new JSZip();
+const useOCR=document.getElementById("useOCR").checked;
+const password=document.getElementById("pdfPassword").value;
+pdfProg.style.width="0%";
 
-    function updateFileInfo(id, files) {
-        const el = document.getElementById(id);
-        el.style.display = 'block';
-        el.innerHTML = files.length === 1 ? `<strong>${files[0].name}</strong>` : `<strong>${files.length} files selected</strong>`;
-    }
+for(let i=0;i<pdfFiles.length;i++){
+const data=await pdfFiles[i].arrayBuffer();
+const pdf=await pdfjsLib.getDocument({data,password}).promise;
+let text="";
 
-    // PDF to Word Logic
-    document.getElementById('btn-pdf').onclick = async () => {
-        const btn = document.getElementById('btn-pdf');
-        const loader = document.getElementById('pdf-loader');
-        const progressCont = document.getElementById('pdf-progress');
-        const progressFill = document.getElementById('pdf-progress-fill');
-        const resultDiv = document.getElementById('pdf-result');
+for(let p=1;p<=pdf.numPages;p++){
+const page=await pdf.getPage(p);
+if(useOCR){
+const viewport=page.getViewport({scale:2});
+const canvas=document.createElement("canvas");
+canvas.width=viewport.width;
+canvas.height=viewport.height;
+await page.render({canvasContext:canvas.getContext("2d"),viewport}).promise;
+const ocr=await Tesseract.recognize(canvas,'eng');
+text+=ocr.data.text+"\n\n";
+}else{
+const c=await page.getTextContent();
+text+=c.items.map(i=>i.str).join(" ")+"\n\n";
+}
+pdfProg.style.width=(((i+p/pdf.numPages)/pdfFiles.length)*100)+"%";
+}
 
-        btn.disabled = true;
-        loader.style.display = 'block';
-        progressCont.style.display = 'block';
-        resultDiv.innerHTML = '';
+const doc=new docx.Document({
+sections:[{children:text.split("\n").map(t=>new docx.Paragraph(t))}]
+});
+const blob=await docx.Packer.toBlob(doc);
 
-        const zip = new JSZip();
+pdfFiles.length==1?
+saveAs(blob,pdfFiles[i].name.replace('.pdf','.docx')):
+zip.file(pdfFiles[i].name.replace('.pdf','.docx'),blob);
+}
 
-        try {
-            for (let i = 0; i < pdfFiles.length; i++) {
-                const file = pdfFiles[i];
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                let fullText = "";
+if(pdfFiles.length>1)
+saveAs(await zip.generateAsync({type:"blob"}),"pdf_to_word.zip");
+};
 
-                for (let p = 1; p <= pdf.numPages; p++) {
-                    const page = await pdf.getPage(p);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(' ');
-                    fullText += pageText + "\n\n";
-                    
-                    let percent = ((i / pdfFiles.length) + (p / pdf.numPages / pdfFiles.length)) * 100;
-                    progressFill.style.width = percent + '%';
-                }
+/* WORD → PDF */
+wordBtn.onclick=async()=>{
+const zip=new JSZip();
+wordProg.style.width="0%";
 
-                if (pdfOutputFormat === 'docx') {
-                    const doc = new docx.Document({
-                        sections: [{ children: fullText.split('\n').map(l => new docx.Paragraph({ children: [new docx.TextRun(l)] })) }]
-                    });
-                    const blob = await docx.Packer.toBlob(doc);
-                    if (pdfFiles.length === 1) saveAs(blob, file.name.replace('.pdf', '.docx'));
-                    else zip.file(file.name.replace('.pdf', '.docx'), blob);
-                } else {
-                    const blob = new Blob([fullText], { type: 'text/plain' });
-                    if (pdfFiles.length === 1) saveAs(blob, file.name.replace('.pdf', '.txt'));
-                    else zip.file(file.name.replace('.pdf', '.txt'), blob);
-                }
-            }
+for(let i=0;i<wordFiles.length;i++){
+const html=await mammoth.convertToHtml({arrayBuffer:await wordFiles[i].arrayBuffer()});
+preview.innerHTML=html.value;
 
-            if (pdfFiles.length > 1) {
-                const content = await zip.generateAsync({ type: "blob" });
-                saveAs(content, "converted_pdfs.zip");
-            }
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.disabled = false;
-            loader.style.display = 'none';
-        }
-    };
+const pdf=await html2pdf().from(preview).set({
+margin:.5,image:{type:'jpeg',quality:.98},
+html2canvas:{scale:2},jsPDF:{unit:'in',format:'letter'}
+}).output('blob');
 
-    // Word to PDF Logic
-    document.getElementById('btn-word').onclick = async () => {
-        const btn = document.getElementById('btn-word');
-        const loader = document.getElementById('word-loader');
-        const progressFill = document.getElementById('word-progress-fill');
-        const preview = document.getElementById('preview-container');
-        
-        btn.disabled = true;
-        loader.style.display = 'block';
-        document.getElementById('word-progress').style.display = 'block';
+wordFiles.length==1?
+saveAs(pdf,wordFiles[i].name.replace('.docx','.pdf')):
+zip.file(wordFiles[i].name.replace('.docx','.pdf'),pdf);
 
-        const zip = new JSZip();
+wordProg.style.width=((i+1)/wordFiles.length*100)+"%";
+}
 
-        try {
-            for (let i = 0; i < wordFiles.length; i++) {
-                const file = wordFiles[i];
-                const arrayBuffer = await file.arrayBuffer();
-                const result = await mammoth.convertToHtml({ arrayBuffer });
-                
-                preview.innerHTML = result.value;
-
-                const opt = {
-                    margin: 1,
-                    filename: file.name.replace('.docx', '.pdf'),
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2 },
-                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-                };
-
-                // Generate PDF
-                const pdfBlob = await html2pdf().set(opt).from(preview).output('blob');
-                
-                if (wordFiles.length === 1) saveAs(pdfBlob, opt.filename);
-                else zip.file(opt.filename, pdfBlob);
-
-                progressFill.style.width = ((i + 1) / wordFiles.length * 100) + '%';
-            }
-
-            if (wordFiles.length > 1) {
-                const content = await zip.generateAsync({ type: "blob" });
-                saveAs(content, "converted_word_files.zip");
-            }
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.disabled = false;
-            loader.style.display = 'none';
-            preview.innerHTML = '';
-        }
-    };
-
-    // Format Switcher
-    document.querySelectorAll('#pdf-format-selector .format-option').forEach(opt => {
-        opt.onclick = () => {
-            document.querySelectorAll('#pdf-format-selector .format-option').forEach(o => o.classList.remove('active'));
-            opt.classList.add('active');
-            pdfOutputFormat = opt.dataset.format;
-        };
-    });
+if(wordFiles.length>1)
+saveAs(await zip.generateAsync({type:"blob"}),"word_to_pdf.zip");
+};
 </script>
 </body>
 </html>

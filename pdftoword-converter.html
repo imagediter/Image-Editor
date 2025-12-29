@@ -2,231 +2,159 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="Free PDF to Text Converter with OCR. Convert scanned or normal PDFs into editable text instantly online.">
+<meta name="keywords" content="pdf to text, pdf to text converter, pdf ocr, extract text from pdf">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF to Text Converter | Multi Tool</title>
+<title>PDF to Text Converter with OCR | Multi Tool</title>
 
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+<!-- Tesseract OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "Segoe UI", sans-serif;
+body{
+    background:#eef6ff;
+    font-family:Segoe UI,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px;
 }
-
-body {
-    background: linear-gradient(135deg, #e6f4ff, #f5fbff);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+.box{
+    background:#fff;
+    max-width:900px;
+    width:100%;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 15px 40px rgba(0,0,0,.1);
 }
-
-.container {
-    background: #fff;
-    max-width: 900px;
-    width: 100%;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+h1{
+    text-align:center;
+    color:#0077ff;
 }
-
-h1 {
-    text-align: center;
-    color: #0077ff;
-    margin-bottom: 10px;
+.upload{
+    border:2px dashed #0077ff;
+    padding:30px;
+    text-align:center;
+    border-radius:10px;
+    margin:20px 0;
+    cursor:pointer;
 }
-
-p {
-    text-align: center;
-    color: #555;
-    margin-bottom: 20px;
+.upload input{display:none}
+button{
+    padding:10px 16px;
+    border:none;
+    border-radius:6px;
+    font-weight:600;
+    cursor:pointer;
 }
-
-.upload-box {
-    border: 2px dashed #0077ff;
-    padding: 30px;
-    text-align: center;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: 0.3s;
+.primary{background:#0077ff;color:#fff}
+.green{background:#28a745;color:#fff}
+.orange{background:#ff9800;color:#fff}
+.red{background:#dc3545;color:#fff}
+.buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
 }
-
-.upload-box:hover {
-    background: #f0f8ff;
+textarea{
+    width:100%;
+    height:280px;
+    margin-top:15px;
+    padding:14px;
+    border-radius:8px;
+    border:1px solid #ccc;
 }
-
-.upload-box input {
-    display: none;
-}
-
-.upload-box span {
-    font-size: 16px;
-    color: #0077ff;
-    font-weight: 600;
-}
-
-.buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 15px;
-}
-
-button {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: 0.3s;
-}
-
-.extract {
-    background: #0077ff;
-    color: #fff;
-}
-
-.extract:hover {
-    background: #005edc;
-}
-
-.copy {
-    background: #28a745;
-    color: #fff;
-}
-
-.download {
-    background: #ff9800;
-    color: #fff;
-}
-
-.reset {
-    background: #dc3545;
-    color: #fff;
-}
-
-textarea {
-    width: 100%;
-    height: 300px;
-    margin-top: 20px;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    resize: vertical;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-@media (max-width: 600px) {
-    textarea {
-        height: 220px;
-    }
+.loader{
+    text-align:center;
+    color:#0077ff;
+    font-weight:600;
+    display:none;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-    <h1>PDF to Text Converter</h1>
-    <p>Upload a PDF file and extract editable text instantly</p>
+<div class="box">
+<h1>PDF to Text Converter (OCR)</h1>
 
-    <label class="upload-box" id="dropArea">
-        <input type="file" id="pdfInput" accept="application/pdf">
-        <span>Click or Drag & Drop PDF Here</span>
-    </label>
+<label class="upload">
+<input type="file" id="pdfInput" accept="application/pdf">
+Click or Drag & Drop PDF
+</label>
 
-    <div class="buttons">
-        <button class="extract" onclick="extractText()">Extract Text</button>
-        <button class="copy" onclick="copyText()">Copy Text</button>
-        <button class="download" onclick="downloadText()">Download TXT</button>
-        <button class="reset" onclick="resetTool()">Reset</button>
-    </div>
+<div class="buttons">
+<button class="primary" onclick="convertPDF()">Convert</button>
+<button class="green" onclick="copyText()">Copy</button>
+<button class="orange" onclick="downloadTXT()">Download</button>
+<button class="red" onclick="resetAll()">Reset</button>
+</div>
 
-    <textarea id="output" placeholder="Extracted text will appear here..."></textarea>
+<div class="loader" id="loader">Processing… Please wait</div>
+
+<textarea id="output" placeholder="Extracted text will appear here..."></textarea>
 </div>
 
 <script>
-let pdfFile = null;
+let file;
 
-const pdfInput = document.getElementById("pdfInput");
-const dropArea = document.getElementById("dropArea");
-const output = document.getElementById("output");
-
-pdfInput.addEventListener("change", e => {
-    pdfFile = e.target.files[0];
+document.getElementById("pdfInput").addEventListener("change", e=>{
+    file = e.target.files[0];
 });
 
-// Drag & Drop
-dropArea.addEventListener("dragover", e => {
-    e.preventDefault();
-    dropArea.style.background = "#f0f8ff";
-});
+async function convertPDF(){
+    if(!file){ alert("Upload a PDF first"); return; }
 
-dropArea.addEventListener("dragleave", () => {
-    dropArea.style.background = "";
-});
+    document.getElementById("loader").style.display="block";
+    document.getElementById("output").value="";
 
-dropArea.addEventListener("drop", e => {
-    e.preventDefault();
-    dropArea.style.background = "";
-    pdfFile = e.dataTransfer.files[0];
-});
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument(buffer).promise;
+    let finalText = "";
 
-async function extractText() {
-    if (!pdfFile) {
-        alert("Please upload a PDF file first.");
-        return;
+    for(let i=1;i<=pdf.numPages;i++){
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+
+        if(content.items.length > 5){
+            finalText += content.items.map(i=>i.str).join(" ") + "\n\n";
+        }else{
+            const viewport = page.getViewport({scale:2});
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({canvasContext:ctx,viewport}).promise;
+            const ocr = await Tesseract.recognize(canvas,"eng");
+            finalText += ocr.data.text + "\n\n";
+        }
     }
 
-    output.value = "Extracting text, please wait...";
-
-    const fileReader = new FileReader();
-    fileReader.readAsArrayBuffer(pdfFile);
-
-    fileReader.onload = async function () {
-        const typedarray = new Uint8Array(this.result);
-        const pdf = await pdfjsLib.getDocument(typedarray).promise;
-
-        let textContent = "";
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-            const strings = content.items.map(item => item.str);
-            textContent += strings.join(" ") + "\n\n";
-        }
-
-        output.value = textContent.trim();
-    };
+    document.getElementById("output").value = finalText.trim();
+    document.getElementById("loader").style.display="none";
 }
 
-function copyText() {
-    if (!output.value) return;
+function copyText(){
     navigator.clipboard.writeText(output.value);
-    alert("Text copied to clipboard!");
+    alert("Copied!");
 }
-
-function downloadText() {
-    if (!output.value) return;
-
-    const blob = new Blob([output.value], { type: "text/plain" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "pdf-to-text.txt";
-    link.click();
+function downloadTXT(){
+    const blob = new Blob([output.value],{type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "pdf-to-text.txt";
+    a.click();
 }
-
-function resetTool() {
-    pdfInput.value = "";
-    pdfFile = null;
-    output.value = "";
+function resetAll(){
+    file=null;
+    output.value="";
+    pdfInput.value="";
 }
 </script>
 

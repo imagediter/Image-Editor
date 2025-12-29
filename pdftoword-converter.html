@@ -2,202 +2,233 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PDF ↔ Word Converter | Advanced Tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF to Text Converter | Multi Tool</title>
 
-<!-- ICONS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-<!-- LIBRARIES -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.2/index.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
-:root{
---blue:#0066ff;
---dark:#0044cc;
---bg:#f4f7fb;
---card:#fff;
---border:#e2e8f0;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
 }
-*{box-sizing:border-box;font-family:Segoe UI,Roboto}
-body{margin:0;background:var(--bg);padding:20px}
-.container{max-width:1200px;margin:auto}
-header{
-background:linear-gradient(135deg,var(--blue),var(--dark));
-color:#fff;padding:35px;border-radius:16px;text-align:center
+
+body {
+    background: linear-gradient(135deg, #e6f4ff, #f5fbff);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
-gap:25px;margin-top:30px
+
+.container {
+    background: #fff;
+    max-width: 900px;
+    width: 100%;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
-.card{
-background:var(--card);padding:25px;border-radius:14px;
-box-shadow:0 10px 25px rgba(0,0,0,.08)
+
+h1 {
+    text-align: center;
+    color: #0077ff;
+    margin-bottom: 10px;
 }
-.card h2{color:var(--blue)}
-.drop{
-border:2px dashed var(--border);
-padding:35px;border-radius:12px;
-text-align:center;cursor:pointer
+
+p {
+    text-align: center;
+    color: #555;
+    margin-bottom: 20px;
 }
-.drop i{font-size:38px;color:var(--blue)}
-button{
-width:100%;padding:14px;
-border:none;border-radius:10px;
-background:var(--blue);color:#fff;
-font-size:16px;font-weight:600;
-margin-top:12px;cursor:pointer
+
+.upload-box {
+    border: 2px dashed #0077ff;
+    padding: 30px;
+    text-align: center;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
 }
-button:disabled{background:#ccc}
-.progress{height:8px;background:#eee;border-radius:10px;overflow:hidden;margin-top:10px}
-.progress span{display:block;height:100%;width:0;background:#28a745}
-small{color:#555}
-#preview{position:absolute;left:-9999px;width:800px}
+
+.upload-box:hover {
+    background: #f0f8ff;
+}
+
+.upload-box input {
+    display: none;
+}
+
+.upload-box span {
+    font-size: 16px;
+    color: #0077ff;
+    font-weight: 600;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.extract {
+    background: #0077ff;
+    color: #fff;
+}
+
+.extract:hover {
+    background: #005edc;
+}
+
+.copy {
+    background: #28a745;
+    color: #fff;
+}
+
+.download {
+    background: #ff9800;
+    color: #fff;
+}
+
+.reset {
+    background: #dc3545;
+    color: #fff;
+}
+
+textarea {
+    width: 100%;
+    height: 300px;
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    resize: vertical;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+    textarea {
+        height: 220px;
+    }
+}
 </style>
 </head>
 
 <body>
+
 <div class="container">
+    <h1>PDF to Text Converter</h1>
+    <p>Upload a PDF file and extract editable text instantly</p>
 
-<header>
-<h1><i class="fas fa-sync"></i> PDF ↔ Word Converter</h1>
-<p>OCR • Password PDF • Bulk Conversion • 100% Browser-Side</p>
-</header>
+    <label class="upload-box" id="dropArea">
+        <input type="file" id="pdfInput" accept="application/pdf">
+        <span>Click or Drag & Drop PDF Here</span>
+    </label>
 
-<div class="grid">
+    <div class="buttons">
+        <button class="extract" onclick="extractText()">Extract Text</button>
+        <button class="copy" onclick="copyText()">Copy Text</button>
+        <button class="download" onclick="downloadText()">Download TXT</button>
+        <button class="reset" onclick="resetTool()">Reset</button>
+    </div>
 
-<!-- PDF TO WORD -->
-<div class="card">
-<h2><i class="fas fa-file-pdf"></i> PDF → Word</h2>
-
-<div class="drop" id="pdfDrop">
-<i class="fas fa-cloud-upload-alt"></i>
-<p>Drop PDF or Click</p>
-<input type="file" id="pdfInput" hidden multiple accept=".pdf">
-</div>
-
-<input id="pdfPassword" placeholder="PDF Password (optional)" style="width:100%;padding:10px;margin-top:10px">
-
-<label><input type="checkbox" id="useOCR"> Enable OCR (Scanned PDFs)</label>
-
-<button id="pdfBtn" disabled>Convert PDF</button>
-<div class="progress"><span id="pdfProg"></span></div>
-</div>
-
-<!-- WORD TO PDF -->
-<div class="card">
-<h2><i class="fas fa-file-word"></i> Word → PDF</h2>
-
-<div class="drop" id="wordDrop">
-<i class="fas fa-cloud-upload-alt"></i>
-<p>Drop DOCX or Click</p>
-<input type="file" id="wordInput" hidden multiple accept=".docx">
-</div>
-
-<button id="wordBtn" disabled>Convert Word</button>
-<div class="progress"><span id="wordProg"></span></div>
-</div>
-
-</div>
-<div id="preview"></div>
+    <textarea id="output" placeholder="Extracted text will appear here..."></textarea>
 </div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+let pdfFile = null;
 
-let pdfFiles=[],wordFiles=[];
+const pdfInput = document.getElementById("pdfInput");
+const dropArea = document.getElementById("dropArea");
+const output = document.getElementById("output");
 
-/* DROP ZONES */
-const bindDrop=(box,input,cb)=>{
-box.onclick=()=>input.click();
-box.ondragover=e=>{e.preventDefault();box.style.borderColor='#0066ff'}
-box.ondragleave=()=>box.style.borderColor='';
-box.ondrop=e=>{
-e.preventDefault();box.style.borderColor='';
-cb([...e.dataTransfer.files])
-};
-input.onchange=()=>cb([...input.files]);
-};
-
-bindDrop(pdfDrop,pdfInput,f=>{pdfFiles=f;pdfBtn.disabled=false});
-bindDrop(wordDrop,wordInput,f=>{wordFiles=f;wordBtn.disabled=false});
-
-/* PDF → WORD */
-pdfBtn.onclick=async()=>{
-const zip=new JSZip();
-const useOCR=document.getElementById("useOCR").checked;
-const password=document.getElementById("pdfPassword").value;
-pdfProg.style.width="0%";
-
-for(let i=0;i<pdfFiles.length;i++){
-const data=await pdfFiles[i].arrayBuffer();
-const pdf=await pdfjsLib.getDocument({data,password}).promise;
-let text="";
-
-for(let p=1;p<=pdf.numPages;p++){
-const page=await pdf.getPage(p);
-if(useOCR){
-const viewport=page.getViewport({scale:2});
-const canvas=document.createElement("canvas");
-canvas.width=viewport.width;
-canvas.height=viewport.height;
-await page.render({canvasContext:canvas.getContext("2d"),viewport}).promise;
-const ocr=await Tesseract.recognize(canvas,'eng');
-text+=ocr.data.text+"\n\n";
-}else{
-const c=await page.getTextContent();
-text+=c.items.map(i=>i.str).join(" ")+"\n\n";
-}
-pdfProg.style.width=(((i+p/pdf.numPages)/pdfFiles.length)*100)+"%";
-}
-
-const doc=new docx.Document({
-sections:[{children:text.split("\n").map(t=>new docx.Paragraph(t))}]
+pdfInput.addEventListener("change", e => {
+    pdfFile = e.target.files[0];
 });
-const blob=await docx.Packer.toBlob(doc);
 
-pdfFiles.length==1?
-saveAs(blob,pdfFiles[i].name.replace('.pdf','.docx')):
-zip.file(pdfFiles[i].name.replace('.pdf','.docx'),blob);
+// Drag & Drop
+dropArea.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropArea.style.background = "#f0f8ff";
+});
+
+dropArea.addEventListener("dragleave", () => {
+    dropArea.style.background = "";
+});
+
+dropArea.addEventListener("drop", e => {
+    e.preventDefault();
+    dropArea.style.background = "";
+    pdfFile = e.dataTransfer.files[0];
+});
+
+async function extractText() {
+    if (!pdfFile) {
+        alert("Please upload a PDF file first.");
+        return;
+    }
+
+    output.value = "Extracting text, please wait...";
+
+    const fileReader = new FileReader();
+    fileReader.readAsArrayBuffer(pdfFile);
+
+    fileReader.onload = async function () {
+        const typedarray = new Uint8Array(this.result);
+        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+
+        let textContent = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const strings = content.items.map(item => item.str);
+            textContent += strings.join(" ") + "\n\n";
+        }
+
+        output.value = textContent.trim();
+    };
 }
 
-if(pdfFiles.length>1)
-saveAs(await zip.generateAsync({type:"blob"}),"pdf_to_word.zip");
-};
-
-/* WORD → PDF */
-wordBtn.onclick=async()=>{
-const zip=new JSZip();
-wordProg.style.width="0%";
-
-for(let i=0;i<wordFiles.length;i++){
-const html=await mammoth.convertToHtml({arrayBuffer:await wordFiles[i].arrayBuffer()});
-preview.innerHTML=html.value;
-
-const pdf=await html2pdf().from(preview).set({
-margin:.5,image:{type:'jpeg',quality:.98},
-html2canvas:{scale:2},jsPDF:{unit:'in',format:'letter'}
-}).output('blob');
-
-wordFiles.length==1?
-saveAs(pdf,wordFiles[i].name.replace('.docx','.pdf')):
-zip.file(wordFiles[i].name.replace('.docx','.pdf'),pdf);
-
-wordProg.style.width=((i+1)/wordFiles.length*100)+"%";
+function copyText() {
+    if (!output.value) return;
+    navigator.clipboard.writeText(output.value);
+    alert("Text copied to clipboard!");
 }
 
-if(wordFiles.length>1)
-saveAs(await zip.generateAsync({type:"blob"}),"word_to_pdf.zip");
-};
+function downloadText() {
+    if (!output.value) return;
+
+    const blob = new Blob([output.value], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "pdf-to-text.txt";
+    link.click();
+}
+
+function resetTool() {
+    pdfInput.value = "";
+    pdfFile = null;
+    output.value = "";
+}
 </script>
+
 </body>
 </html>

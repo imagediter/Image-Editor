@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Compressor – Reduce PDF Size Online</title>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+*{box-sizing:border-box;font-family:Segoe UI,sans-serif}
+body{
+    background:linear-gradient(135deg,#e6f3ff,#ffffff);
+    min-height:100vh;
+    padding:20px;
+}
+.container{
+    max-width:800px;
+    margin:auto;
+    background:#fff;
+    padding:25px;
+    border-radius:14px;
+    box-shadow:0 15px 40px rgba(0,0,0,.12);
+}
+h1{text-align:center;color:#0077ff}
+.drop-zone{
+    border:2px dashed #0077ff;
+    padding:35px;
+    border-radius:12px;
+    text-align:center;
+    cursor:pointer;
+    transition:.3s;
+}
+.drop-zone:hover{background:#f2f8ff}
+.drop-zone input{display:none}
+.controls{
+    margin-top:20px;
+}
+select,button{
+    width:100%;
+    padding:12px;
+    margin-top:12px;
+    border-radius:8px;
+    font-size:16px;
+}
+button{
+    background:#0077ff;
+    color:#fff;
+    border:none;
+    cursor:pointer;
+}
+button:hover{background:#005fd1}
+.list{
+    margin-top:20px;
+}
+.file{
+    background:#f4faff;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:10px;
+    font-size:14px;
+}
+.footer{
+    margin-top:25px;
+    text-align:center;
+    font-size:13px;
+    color:#777;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h1>PDF Compressor</h1>
+
+<div class="drop-zone" id="dropZone">
+    <p>📄 Drag & Drop PDF Files or Click to Upload</p>
+    <input type="file" id="pdfInput" accept="application/pdf" multiple>
+</div>
+
+<div class="controls">
+<label><strong>Compression Mode</strong></label>
+<select id="mode">
+    <option value="0.85">Low (Best Quality)</option>
+    <option value="0.65" selected>Medium (Recommended)</option>
+    <option value="0.45">High (Smallest Size)</option>
+</select>
+</div>
+
+<button onclick="compressAll()">Compress PDFs</button>
+
+<div class="list" id="fileList"></div>
+
+<div class="footer">Fast • Secure • Browser-Based PDF Compression</div>
+</div>
+
+<script>
+const input = document.getElementById("pdfInput");
+const dropZone = document.getElementById("dropZone");
+const fileList = document.getElementById("fileList");
+
+dropZone.onclick = () => input.click();
+
+dropZone.ondragover = e => {
+    e.preventDefault();
+    dropZone.style.background="#eef6ff";
+};
+dropZone.ondragleave = () => dropZone.style.background="";
+dropZone.ondrop = e => {
+    e.preventDefault();
+    input.files = e.dataTransfer.files;
+};
+
+async function compressAll(){
+    if(!input.files.length){
+        alert("Please select PDF files");
+        return;
+    }
+
+    fileList.innerHTML = "";
+    const quality = document.getElementById("mode").value;
+    const { jsPDF } = window.jspdf;
+
+    for(const file of input.files){
+        const box = document.createElement("div");
+        box.className="file";
+        box.innerHTML=`<strong>${file.name}</strong><br>Compressing...`;
+        fileList.appendChild(box);
+
+        const originalSize = (file.size/1024/1024).toFixed(2);
+        const pdfData = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data:pdfData}).promise;
+        const newPdf = new jsPDF();
+
+        for(let i=1;i<=pdf.numPages;i++){
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({scale:2});
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({canvasContext:ctx,viewport}).promise;
+
+            const img = canvas.toDataURL("image/jpeg", quality);
+            if(i>1) newPdf.addPage();
+            newPdf.addImage(img,"JPEG",0,0,210,297);
+        }
+
+        const blob = newPdf.output("blob");
+        const newSize = (blob.size/1024/1024).toFixed(2);
+
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "compressed-"+file.name;
+        a.click();
+
+        box.innerHTML = `
+            <strong>${file.name}</strong><br>
+            Original: ${originalSize} MB<br>
+            Compressed: ${newSize} MB<br>
+            Saved: ${(originalSize-newSize).toFixed(2)} MB
+        `;
+    }
+}
+</script>
+
+</body>
+</html>

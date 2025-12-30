@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Background Remover – Multi Tool</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
+body{background:linear-gradient(135deg,#eef2ff,#dbeafe);padding:15px}
+.container{max-width:1400px;margin:auto}
+
+h1{text-align:center;font-size:2.3rem;
+background:linear-gradient(90deg,#3498db,#8e44ad);
+-webkit-background-clip:text;color:transparent}
+
+.grid{display:grid;gap:20px}
+@media(min-width:900px){.grid{grid-template-columns:1fr 1.2fr}}
+
+.card{background:#fff;border-radius:14px;padding:20px;
+box-shadow:0 10px 25px rgba(0,0,0,.1)}
+
+.upload{border:3px dashed #3498db;border-radius:14px;
+padding:30px;text-align:center;cursor:pointer}
+.upload:hover{background:#f0f7ff}
+
+.preview-list{display:grid;grid-template-columns:repeat(auto-fill,120px);
+gap:12px;margin-top:15px}
+
+.thumb{border-radius:10px;overflow:hidden;
+box-shadow:0 3px 10px rgba(0,0,0,.15);position:relative}
+
+.thumb img{width:100%;height:100px;object-fit:cover}
+
+.controls{margin-top:15px}
+label{font-weight:600;font-size:.9rem}
+input,select{width:100%;margin-top:6px}
+
+button{padding:12px;border:none;border-radius:10px;
+font-weight:600;cursor:pointer;color:#fff}
+
+.process{background:linear-gradient(135deg,#3498db,#2c3e50)}
+.download{background:#27ae60}
+.reset{background:#e74c3c}
+
+canvas{display:none}
+
+.loader{
+position:fixed;inset:0;background:#fff;
+display:none;align-items:center;justify-content:center;
+z-index:999
+}
+.spinner{
+width:60px;height:60px;border:6px solid #cfe2f3;
+border-top:6px solid #3498db;border-radius:50%;
+animation:spin 1s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h1><i class="fas fa-magic"></i> AI Background Remover</h1>
+
+<div class="grid">
+<!-- LEFT -->
+<div class="card">
+<div class="upload" id="upload">
+<i class="fas fa-images fa-3x" style="color:#3498db"></i>
+<p>Click or Drop Multiple Images</p>
+<input type="file" id="files" hidden multiple accept="image/*">
+</div>
+
+<div class="preview-list" id="list"></div>
+</div>
+
+<!-- RIGHT -->
+<div class="card">
+<div class="controls">
+<label>Edge Sensitivity</label>
+<input type="range" id="sens" min="10" max="100" value="60">
+
+<label>Output Format</label>
+<select id="format">
+<option value="png">PNG (Transparent)</option>
+<option value="jpeg">JPG</option>
+<option value="webp">WebP</option>
+</select>
+
+<label>Quality (JPG / WebP)</label>
+<input type="range" id="quality" min="0.5" max="1" step="0.05" value="0.9">
+</div>
+
+<div style="margin-top:15px;display:grid;gap:10px">
+<button class="process" id="process">Remove Background</button>
+<button class="download" id="download">Download All</button>
+<button class="reset" id="reset">Reset</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="loader" id="loader">
+<div class="spinner"></div>
+<p>Processing Images...</p>
+</div>
+
+<script>
+const files=document.getElementById("files"),
+upload=document.getElementById("upload"),
+list=document.getElementById("list"),
+sens=document.getElementById("sens"),
+format=document.getElementById("format"),
+quality=document.getElementById("quality"),
+process=document.getElementById("process"),
+download=document.getElementById("download"),
+reset=document.getElementById("reset"),
+loader=document.getElementById("loader");
+
+let images=[],results=[];
+
+upload.onclick=()=>files.click();
+files.onchange=e=>{
+images=[...e.target.files];
+list.innerHTML="";
+images.forEach(f=>{
+let img=document.createElement("img");
+img.src=URL.createObjectURL(f);
+let div=document.createElement("div");
+div.className="thumb";
+div.appendChild(img);
+list.appendChild(div);
+});
+};
+
+process.onclick=async()=>{
+if(!images.length)return;
+loader.style.display="flex";
+results=[];
+for(let f of images){
+let img=new Image();
+img.src=URL.createObjectURL(f);
+await img.decode();
+let c=document.createElement("canvas"),
+ctx=c.getContext("2d");
+c.width=img.width;c.height=img.height;
+ctx.drawImage(img,0,0);
+let d=ctx.getImageData(0,0,c.width,c.height);
+let p=d.data,s=sens.value/100;
+for(let i=0;i<p.length;i+=4){
+let avg=(p[i]+p[i+1]+p[i+2])/3;
+let diff=Math.abs(p[i]-p[i+1])+Math.abs(p[i+1]-p[i+2]);
+if(avg>255*s && diff<80)p[i+3]=0;
+}
+ctx.putImageData(d,0,0);
+results.push(c);
+}
+loader.style.display="none";
+alert("Processing complete!");
+};
+
+download.onclick=()=>{
+results.forEach((c,i)=>{
+let a=document.createElement("a");
+a.href=c.toDataURL("image/"+format.value,quality.value);
+a.download="bg-removed-"+(i+1)+"."+format.value;
+a.click();
+});
+};
+
+reset.onclick=()=>location.reload();
+</script>
+</body>
+</html>

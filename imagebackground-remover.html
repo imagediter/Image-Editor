@@ -1,177 +1,271 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Background Remover – Multi Tool</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>AI Background Remover Pro – Multi Tool Hub</title>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/bundle.js"></script>
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
-body{background:linear-gradient(135deg,#eef2ff,#dbeafe);padding:15px}
-.container{max-width:1400px;margin:auto}
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #8e44ad;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --bg: #f8faff;
+        }
 
-h1{text-align:center;font-size:2.3rem;
-background:linear-gradient(90deg,#3498db,#8e44ad);
--webkit-background-clip:text;color:transparent}
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--bg); color: #333; padding: 20px; line-height: 1.6; }
+        
+        .container { max-width: 1100px; margin: auto; }
 
-.grid{display:grid;gap:20px}
-@media(min-width:900px){.grid{grid-template-columns:1fr 1.2fr}}
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { 
+            font-size: 2.5rem; 
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text; 
+            color: transparent;
+            margin-bottom: 10px;
+        }
 
-.card{background:#fff;border-radius:14px;padding:20px;
-box-shadow:0 10px 25px rgba(0,0,0,.1)}
+        .grid { display: grid; gap: 25px; grid-template-columns: 1fr; }
+        @media(min-width: 900px){ .grid { grid-template-columns: 350px 1fr; } }
 
-.upload{border:3px dashed #3498db;border-radius:14px;
-padding:30px;text-align:center;cursor:pointer}
-.upload:hover{background:#f0f7ff}
+        .card { 
+            background: #fff; border-radius: 16px; padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
 
-.preview-list{display:grid;grid-template-columns:repeat(auto-fill,120px);
-gap:12px;margin-top:15px}
+        .upload-area {
+            border: 2px dashed #cbd5e0; border-radius: 12px;
+            padding: 40px 20px; text-align: center; cursor: pointer;
+            transition: all 0.3s ease; background: #fafbfc;
+        }
+        .upload-area:hover { border-color: var(--primary); background: #f0f7ff; }
+        .upload-area i { color: var(--primary); margin-bottom: 15px; }
 
-.thumb{border-radius:10px;overflow:hidden;
-box-shadow:0 3px 10px rgba(0,0,0,.15);position:relative}
+        .preview-list { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px; margin-top: 20px; 
+        }
 
-.thumb img{width:100%;height:100px;object-fit:cover}
+        .thumb { 
+            aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+            border: 2px solid #edf2f7; position: relative; 
+        }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .thumb.processed { border-color: var(--success); }
 
-.controls{margin-top:15px}
-label{font-weight:600;font-size:.9rem}
-input,select{width:100%;margin-top:6px}
+        .controls label { 
+            display: block; margin: 15px 0 5px; font-weight: 600; font-size: 0.85rem; color: #4a5568;
+        }
 
-button{padding:12px;border:none;border-radius:10px;
-font-weight:600;cursor:pointer;color:#fff}
+        select, input[type="range"] {
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; outline: none;
+        }
 
-.process{background:linear-gradient(135deg,#3498db,#2c3e50)}
-.download{background:#27ae60}
-.reset{background:#e74c3c}
+        .btn-group { display: grid; gap: 12px; margin-top: 25px; }
+        button {
+            padding: 14px; border: none; border-radius: 10px;
+            font-weight: 700; cursor: pointer; color: #fff;
+            transition: transform 0.2s, opacity 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-canvas{display:none}
+        .process { background: var(--primary); }
+        .download { background: var(--success); }
+        .reset { background: #64748b; }
 
-.loader{
-position:fixed;inset:0;background:#fff;
-display:none;align-items:center;justify-content:center;
-z-index:999
-}
-.spinner{
-width:60px;height:60px;border:6px solid #cfe2f3;
-border-top:6px solid #3498db;border-radius:50%;
-animation:spin 1s linear infinite
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
+        /* Loader Overly */
+        #loader {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; backdrop-filter: blur(4px);
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .status-text { font-weight: 600; color: var(--primary); }
+    </style>
 </head>
 
 <body>
+
+<div id="loader">
+    <div class="spinner"></div>
+    <p class="status-text" id="status-msg">Initializing AI Model...</p>
+    <p style="font-size: 0.8rem; color: #777; margin-top: 5px;">First run may take a moment to download the model.</p>
+</div>
+
 <div class="container">
-<h1><i class="fas fa-magic"></i> AI Background Remover</h1>
+    <header>
+        <h1><i class="fas fa-wand-sparkles"></i> AI Background Remover</h1>
+        <p>Professional background removal powered by local Machine Learning</p>
+    </header>
 
-<div class="grid">
-<!-- LEFT -->
-<div class="card">
-<div class="upload" id="upload">
-<i class="fas fa-images fa-3x" style="color:#3498db"></i>
-<p>Click or Drop Multiple Images</p>
-<input type="file" id="files" hidden multiple accept="image/*">
-</div>
+    <div class="grid">
+        <div class="card">
+            <div class="upload-area" id="drop-zone">
+                <input type="file" id="file-input" hidden multiple accept="image/*">
+                <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                <p><strong>Click to upload</strong><br>or drag & drop images</p>
+            </div>
 
-<div class="preview-list" id="list"></div>
-</div>
+            <div class="controls">
+                <label>Output Format</label>
+                <select id="output-format">
+                    <option value="png">PNG (Transparent)</option>
+                    <option value="webp">WebP (Smallest Size)</option>
+                    <option value="jpeg">JPEG (White Background)</option>
+                </select>
 
-<!-- RIGHT -->
-<div class="card">
-<div class="controls">
-<label>Edge Sensitivity</label>
-<input type="range" id="sens" min="10" max="100" value="60">
+                <label>Image Quality</label>
+                <input type="range" id="quality-slider" min="0.5" max="1" step="0.05" value="0.9">
+            </div>
 
-<label>Output Format</label>
-<select id="format">
-<option value="png">PNG (Transparent)</option>
-<option value="jpeg">JPG</option>
-<option value="webp">WebP</option>
-</select>
+            <div class="btn-group">
+                <button class="process" id="start-btn"><i class="fas fa-play"></i> Remove Background</button>
+                <button class="download" id="dl-btn" disabled><i class="fas fa-download"></i> Download All</button>
+                <button class="reset" id="reset-btn"><i class="fas fa-redo"></i> Clear All</button>
+            </div>
+        </div>
 
-<label>Quality (JPG / WebP)</label>
-<input type="range" id="quality" min="0.5" max="1" step="0.05" value="0.9">
-</div>
-
-<div style="margin-top:15px;display:grid;gap:10px">
-<button class="process" id="process">Remove Background</button>
-<button class="download" id="download">Download All</button>
-<button class="reset" id="reset">Reset</button>
-</div>
-</div>
-</div>
-</div>
-
-<div class="loader" id="loader">
-<div class="spinner"></div>
-<p>Processing Images...</p>
+        <div class="card">
+            <h3 style="margin-bottom: 15px; font-size: 1rem; color: #64748b;">Image Queue</h3>
+            <div class="preview-list" id="preview-container">
+                </div>
+        </div>
+    </div>
 </div>
 
 <script>
-const files=document.getElementById("files"),
-upload=document.getElementById("upload"),
-list=document.getElementById("list"),
-sens=document.getElementById("sens"),
-format=document.getElementById("format"),
-quality=document.getElementById("quality"),
-process=document.getElementById("process"),
-download=document.getElementById("download"),
-reset=document.getElementById("reset"),
-loader=document.getElementById("loader");
+    const fileInput = document.getElementById("file-input");
+    const dropZone = document.getElementById("drop-zone");
+    const previewContainer = document.getElementById("preview-container");
+    const startBtn = document.getElementById("start-btn");
+    const dlBtn = document.getElementById("dl-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const loader = document.getElementById("loader");
+    const statusMsg = document.getElementById("status-msg");
 
-let images=[],results=[];
+    let queue = [];
+    let processedResults = [];
 
-upload.onclick=()=>files.click();
-files.onchange=e=>{
-images=[...e.target.files];
-list.innerHTML="";
-images.forEach(f=>{
-let img=document.createElement("img");
-img.src=URL.createObjectURL(f);
-let div=document.createElement("div");
-div.className="thumb";
-div.appendChild(img);
-list.appendChild(div);
-});
-};
+    // Trigger file input
+    dropZone.onclick = () => fileInput.click();
 
-process.onclick=async()=>{
-if(!images.length)return;
-loader.style.display="flex";
-results=[];
-for(let f of images){
-let img=new Image();
-img.src=URL.createObjectURL(f);
-await img.decode();
-let c=document.createElement("canvas"),
-ctx=c.getContext("2d");
-c.width=img.width;c.height=img.height;
-ctx.drawImage(img,0,0);
-let d=ctx.getImageData(0,0,c.width,c.height);
-let p=d.data,s=sens.value/100;
-for(let i=0;i<p.length;i+=4){
-let avg=(p[i]+p[i+1]+p[i+2])/3;
-let diff=Math.abs(p[i]-p[i+1])+Math.abs(p[i+1]-p[i+2]);
-if(avg>255*s && diff<80)p[i+3]=0;
-}
-ctx.putImageData(d,0,0);
-results.push(c);
-}
-loader.style.display="none";
-alert("Processing complete!");
-};
+    // Handle File Selection
+    fileInput.onchange = e => {
+        const files = Array.from(e.target.files);
+        handleFiles(files);
+    };
 
-download.onclick=()=>{
-results.forEach((c,i)=>{
-let a=document.createElement("a");
-a.href=c.toDataURL("image/"+format.value,quality.value);
-a.download="bg-removed-"+(i+1)+"."+format.value;
-a.click();
-});
-};
+    function handleFiles(files) {
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const item = {
+                    file: file,
+                    originalSrc: event.target.result,
+                    processedBlob: null
+                };
+                queue.push(item);
+                renderThumb(item);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 
-reset.onclick=()=>location.reload();
+    function renderThumb(item) {
+        const div = document.createElement("div");
+        div.className = "thumb";
+        div.innerHTML = `<img src="${item.originalSrc}" alt="preview">`;
+        previewContainer.appendChild(div);
+    }
+
+    // AI Processing Logic
+    startBtn.onclick = async () => {
+        if (queue.length === 0) return alert("Please upload images first!");
+        
+        loader.style.display = "flex";
+        processedResults = [];
+        
+        try {
+            for (let i = 0; i < queue.length; i++) {
+                statusMsg.innerText = `Processing Image ${i + 1} of ${queue.length}...`;
+                
+                // The AI Magic happens here
+                const blob = await imglyRemoveBackground(queue[i].file, {
+                    output: {
+                        format: `image/${document.getElementById("output-format").value}`,
+                        quality: parseFloat(document.getElementById("quality-slider").value)
+                    },
+                    progress: (args) => {
+                        // You can update a progress bar here if needed
+                    }
+                });
+
+                const url = URL.createObjectURL(blob);
+                processedResults.push({ url, name: queue[i].file.name });
+                
+                // Update UI for this thumbnail
+                const thumbs = previewContainer.querySelectorAll('.thumb');
+                thumbs[i].classList.add('processed');
+                thumbs[i].querySelector('img').src = url;
+            }
+
+            dlBtn.disabled = false;
+            alert("Processing Complete!");
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred during processing. Check console.");
+        } finally {
+            loader.style.display = "none";
+        }
+    };
+
+    // Bulk Download
+    dlBtn.onclick = () => {
+        processedResults.forEach((res, index) => {
+            const ext = document.getElementById("output-format").value;
+            const link = document.createElement("a");
+            link.href = res.url;
+            link.download = `no-bg-${res.name.split('.')[0]}.${ext}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    };
+
+    // Reset Application
+    resetBtn.onclick = () => {
+        queue = [];
+        processedResults.forEach(res => URL.revokeObjectURL(res.url));
+        processedResults = [];
+        previewContainer.innerHTML = "";
+        dlBtn.disabled = true;
+        fileInput.value = "";
+    };
+
+    // Drag and Drop Logic
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = "#3498db"; };
+    dropZone.ondragleave = () => { dropZone.style.borderColor = "#cbd5e0"; };
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = "#cbd5e0";
+        handleFiles(Array.from(e.dataTransfer.files));
+    };
 </script>
+
 </body>
 </html>

@@ -1,210 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Background Remover – Free Online Tool</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Background Remover | Professional Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F9FAFB;
+            --card: #FFFFFF;
+            --text: #111827;
+            --text-light: #6B7280;
+            --border: #E5E7EB;
+        }
 
-<meta name="description" content="Remove image backgrounds instantly using AI. Free U²-Net powered background remover with high quality transparent PNG output.">
-<meta name="keywords" content="AI background remover, remove bg, background remover online, image background removal">
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
-<style>
-*{box-sizing:border-box;font-family:system-ui}
-body{margin:0;background:#f3f6fb;color:#333}
-header{text-align:center;padding:30px;background:#fff}
-header h1{margin:0;font-size:2.4rem}
-header p{color:#666}
+        /* Header */
+        header {
+            background: var(--card);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
 
-.container{max-width:1100px;margin:30px auto;background:#fff;
-border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.12);padding:25px}
+        header h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
 
-.upload{
-border:3px dashed #cbd5e0;padding:40px;border-radius:14px;
-text-align:center;cursor:pointer;transition:.3s
-}
-.upload:hover{background:#eef5ff}
+        /* Main Container */
+        .container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            flex-grow: 1;
+            width: 100%;
+        }
 
-.preview{
-margin-top:20px;
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-gap:15px
-}
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+        }
 
-.preview img{width:100%;border-radius:12px}
+        @media (max-width: 900px) {
+            .tool-grid { grid-template-columns: 1fr; }
+        }
 
-button{
-margin-top:20px;
-padding:14px 20px;
-border-radius:10px;
-border:none;
-font-weight:700;
-cursor:pointer;
-color:#fff
-}
-.primary{background:#3498db}
-.success{background:#27ae60}
-.danger{background:#e74c3c}
+        /* Upload Area */
+        .upload-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border: 2px dashed var(--border);
+            text-align: center;
+            transition: border-color 0.3s;
+            position: relative;
+        }
 
-.loader{
-position:fixed;inset:0;
-display:none;
-align-items:center;
-justify-content:center;
-background:rgba(255,255,255,.85);
-z-index:999
-}
-.spinner{
-width:60px;height:60px;
-border:6px solid #eee;
-border-top:6px solid #3498db;
-border-radius:50%;
-animation:spin 1s linear infinite
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
+        .upload-card.dragging {
+            border-color: var(--primary);
+            background: #F5F3FF;
+        }
+
+        .preview-container {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .img-box {
+            text-align: center;
+        }
+
+        .img-box p {
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        canvas, img {
+            max-width: 100%;
+            border-radius: 8px;
+            background-image: linear-gradient(45deg, #eee 25%, transparent 25%), 
+                              linear-gradient(-45deg, #eee 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #eee 75%), 
+                              linear-gradient(-45deg, transparent 75%, #eee 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        /* Controls Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-group {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .control-group h3 {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-primary:disabled { background: #A5B4FC; cursor: not-allowed; }
+
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--bg); }
+
+        /* Background Options */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .color-dot {
+            height: 30px;
+            width: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px var(--border);
+        }
+
+        /* Loading Overlay */
+        #loader {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-
 <body>
 
-<div class="loader" id="loader">
-<div class="spinner"></div>
-</div>
-
 <header>
-<h1>AI Background Remover</h1>
-<p>Remove image backgrounds instantly using real AI (U²-Net)</p>
+    <h1><i class="fa-solid fa-wand-magic-sparkles"></i> AI Background Remover</h1>
 </header>
 
 <div class="container">
+    <div class="tool-grid">
+        <div class="main-workspace">
+            <div class="upload-card" id="dropZone">
+                <div id="loader">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px; font-weight: 600;">AI is working...</p>
+                </div>
 
-<div class="upload" onclick="fileInput.click()">
-<i class="fas fa-cloud-upload-alt fa-3x"></i>
-<p><strong>Click or Drag Images</strong></p>
-<input type="file" id="fileInput" hidden multiple accept="image/*">
+                <div id="uploadPrompt">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                    <h2>Upload an Image</h2>
+                    <p style="color: var(--text-light); margin-bottom: 1.5rem;">Drag & drop or click to browse (PNG, JPG)</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()" style="max-width: 200px; margin: 0 auto;">
+                        Choose File
+                    </button>
+                    <input type="file" id="fileInput" hidden accept="image/*">
+                </div>
+
+                <div class="preview-container" id="previewContainer">
+                    <div class="img-box">
+                        <p>ORIGINAL</p>
+                        <img id="originalImg" src="" alt="Original">
+                    </div>
+                    <div class="img-box">
+                        <p>RESULT</p>
+                        <canvas id="resultCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="control-group">
+                <h3>Actions</h3>
+                <button class="btn btn-primary" id="downloadBtn" disabled>
+                    <i class="fa-solid fa-download"></i> Download PNG
+                </button>
+                <button class="btn btn-outline" style="margin-top: 10px;" onclick="location.reload()">
+                    <i class="fa-solid fa-rotate-left"></i> Start Over
+                </button>
+            </div>
+
+            <div class="control-group">
+                <h3>Add Background</h3>
+                <div class="color-grid">
+                    <div class="color-dot" style="background: transparent; display: flex; align-items: center; justify-content: center;" onclick="changeBg('transparent')"><i class="fa-solid fa-ban" style="font-size: 10px;"></i></div>
+                    <div class="color-dot" style="background: #ffffff;" onclick="changeBg('#ffffff')"></div>
+                    <div class="color-dot" style="background: #000000;" onclick="changeBg('#000000')"></div>
+                    <div class="color-dot" style="background: #FF5252;" onclick="changeBg('#FF5252')"></div>
+                    <div class="color-dot" style="background: #448AFF;" onclick="changeBg('#448AFF')"></div>
+                    <div class="color-dot" style="background: #4CAF50;" onclick="changeBg('#4CAF50')"></div>
+                    <div class="color-dot" style="background: #FFEB3B;" onclick="changeBg('#FFEB3B')"></div>
+                    <div class="color-dot" style="background: #9C27B0;" onclick="changeBg('#9C27B0')"></div>
+                    <div class="color-dot" style="background: #FF9800;" onclick="changeBg('#FF9800')"></div>
+                    <div class="color-dot" style="background: #795548;" onclick="changeBg('#795548')"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="preview" id="preview"></div>
+<script type="module">
+    import imglyRemoveBackground from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm';
 
-<button class="success" onclick="downloadZIP()">Download All (ZIP)</button>
-<button class="danger" onclick="resetAll()">Reset</button>
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const originalImg = document.getElementById('originalImg');
+    const resultCanvas = document.getElementById('resultCanvas');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const loader = document.getElementById('loader');
+    const ctx = resultCanvas.getContext('2d');
 
-</div>
+    let processedBlob = null;
+    let currentBgColor = 'transparent';
 
-<!-- SEO CONTENT -->
-<section style="max-width:1100px;margin:auto;padding:30px;color:#555">
-<h2>Remove Image Background Online Using AI</h2>
-<p>
-This free AI background remover uses U²-Net deep learning to separate subjects from backgrounds accurately.
-Perfect for product photos, designers, creators, and eCommerce images.
-No signup required and all processing happens directly in your browser.
-</p>
-</section>
+    // Handle File Selection
+    fileInput.onchange = (e) => handleFile(e.target.files[0]);
 
-<script>
-const MODEL_URL = "models/u2net.onnx";
-const SIZE = 320;
+    // Drag and Drop
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragging'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('dragging');
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragging');
+        handleFile(e.dataTransfer.files[0]);
+    };
 
-const fileInput = document.getElementById("fileInput");
-const preview = document.getElementById("preview");
-const loader = document.getElementById("loader");
+    async function handleFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
 
-let session;
-let results = [];
+        // Show UI states
+        document.getElementById('uploadPrompt').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'grid';
+        loader.style.display = 'flex';
+        
+        // Show original preview
+        const reader = new FileReader();
+        reader.onload = (e) => originalImg.src = e.target.result;
+        reader.readAsDataURL(file);
 
-// Load AI model
-(async ()=>{
-  loader.style.display="flex";
-  session = await ort.InferenceSession.create(MODEL_URL,{executionProviders:["wasm"]});
-  loader.style.display="none";
-})();
-
-// Upload handler
-fileInput.onchange = e => {
-  [...e.target.files].forEach(file => processFile(file));
-};
-
-async function processFile(file){
-  loader.style.display="flex";
-  const img = new Image();
-  img.onload = async ()=>{
-    const result = await removeBG(img);
-    results.push(result);
-
-    const el = document.createElement("img");
-    el.src = result;
-    preview.appendChild(el);
-
-    loader.style.display="none";
-  };
-  img.src = URL.createObjectURL(file);
-}
-
-// AI Background Removal
-async function removeBG(image){
-  const off = document.createElement("canvas");
-  off.width = SIZE;
-  off.height = SIZE;
-  const octx = off.getContext("2d");
-  octx.drawImage(image,0,0,SIZE,SIZE);
-
-  const imgData = octx.getImageData(0,0,SIZE,SIZE).data;
-  const input = new Float32Array(1*3*SIZE*SIZE);
-
-  let p=0;
-  for(let i=0;i<imgData.length;i+=4){
-    input[p++] = imgData[i]/255;
-    input[p++] = imgData[i+1]/255;
-    input[p++] = imgData[i+2]/255;
-  }
-
-  const tensor = new ort.Tensor("float32", input, [1,3,SIZE,SIZE]);
-  const output = await session.run({input:tensor});
-  const mask = output[Object.keys(output)[0]].data;
-
-  const canvas = document.createElement("canvas");
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(image,0,0);
-
-  const data = ctx.getImageData(0,0,canvas.width,canvas.height);
-  for(let y=0;y<canvas.height;y++){
-    for(let x=0;x<canvas.width;x++){
-      const i=(y*canvas.width+x)*4;
-      const mx=Math.floor(x/canvas.width*SIZE);
-      const my=Math.floor(y/canvas.height*SIZE);
-      data.data[i+3] = mask[my*SIZE+mx]*255;
+        try {
+            // Run AI Background Removal
+            const blob = await imglyRemoveBackground(file);
+            processedBlob = blob;
+            
+            // Render Result
+            await renderResult(blob);
+            
+            downloadBtn.disabled = false;
+        } catch (error) {
+            alert("Error processing image. Make sure it's a valid photo.");
+            console.error(error);
+        } finally {
+            loader.style.display = 'none';
+        }
     }
-  }
 
-  ctx.putImageData(data,0,0);
-  return canvas.toDataURL("image/png");
-}
+    async function renderResult(blob) {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+            resultCanvas.width = img.width;
+            resultCanvas.height = img.height;
+            
+            // Clear and draw background
+            ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+            if (currentBgColor !== 'transparent') {
+                ctx.fillStyle = currentBgColor;
+                ctx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+            }
+            
+            // Draw foreground
+            ctx.drawImage(img, 0, 0);
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    }
 
-// Download ZIP
-async function downloadZIP(){
-  if(!results.length) return;
-  const zip = new JSZip();
-  results.forEach((img,i)=>{
-    zip.file(`image-${i+1}.png`, img.split(",")[1], {base64:true});
-  });
-  const blob = await zip.generateAsync({type:"blob"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="ai-background-removed.zip";
-  a.click();
-}
+    // Change Background Color Logic
+    window.changeBg = (color) => {
+        if (!processedBlob) return;
+        currentBgColor = color;
+        renderResult(processedBlob);
+    };
 
-// Reset
-function resetAll(){
-  results=[];
-  preview.innerHTML="";
-}
+    // Download Logic
+    downloadBtn.onclick = () => {
+        const link = document.createElement('a');
+        link.download = 'removed_bg.png';
+        link.href = resultCanvas.toDataURL('image/png');
+        link.click();
+    };
 </script>
 
 </body>

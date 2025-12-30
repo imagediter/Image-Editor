@@ -5,138 +5,205 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Background Remover – Free Online Tool</title>
 
-<!-- SEO -->
-<meta name="description" content="Remove image backgrounds online instantly. Free AI background remover with batch processing, PNG export & high quality results.">
-<meta name="keywords" content="background remover, remove image background, AI bg remover, free bg remover">
-<link rel="canonical" href="https://yourdomain.com/">
+<meta name="description" content="Remove image backgrounds instantly using AI. Free U²-Net powered background remover with high quality transparent PNG output.">
+<meta name="keywords" content="AI background remover, remove bg, background remover online, image background removal">
 
-<!-- Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#3498db">
-
 <style>
-body{margin:0;font-family:system-ui;background:#f3f6fb}
-header{background:#fff;padding:25px;text-align:center}
-header h1{margin:0;font-size:2.3rem}
-header p{color:#555}
+*{box-sizing:border-box;font-family:system-ui}
+body{margin:0;background:#f3f6fb;color:#333}
+header{text-align:center;padding:30px;background:#fff}
+header h1{margin:0;font-size:2.4rem}
+header p{color:#666}
 
-.tool{max-width:1100px;margin:30px auto;background:#fff;
-border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.12);
-padding:25px}
+.container{max-width:1100px;margin:30px auto;background:#fff;
+border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.12);padding:25px}
 
-.upload{border:3px dashed #cbd5e0;padding:40px;border-radius:14px;
-text-align:center;cursor:pointer}
+.upload{
+border:3px dashed #cbd5e0;padding:40px;border-radius:14px;
+text-align:center;cursor:pointer;transition:.3s
+}
+.upload:hover{background:#eef5ff}
 
-canvas{max-width:100%;border-radius:12px}
+.preview{
+margin-top:20px;
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+gap:15px
+}
+
+.preview img{width:100%;border-radius:12px}
+
 button{
-padding:14px 20px;border-radius:10px;border:none;
-font-weight:700;cursor:pointer;color:#fff
+margin-top:20px;
+padding:14px 20px;
+border-radius:10px;
+border:none;
+font-weight:700;
+cursor:pointer;
+color:#fff
 }
 .primary{background:#3498db}
 .success{background:#27ae60}
 .danger{background:#e74c3c}
+
+.loader{
+position:fixed;inset:0;
+display:none;
+align-items:center;
+justify-content:center;
+background:rgba(255,255,255,.85);
+z-index:999
+}
+.spinner{
+width:60px;height:60px;
+border:6px solid #eee;
+border-top:6px solid #3498db;
+border-radius:50%;
+animation:spin 1s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 
 <body>
 
+<div class="loader" id="loader">
+<div class="spinner"></div>
+</div>
+
 <header>
 <h1>AI Background Remover</h1>
-<p>Remove image backgrounds instantly – free & high quality</p>
+<p>Remove image backgrounds instantly using real AI (U²-Net)</p>
 </header>
 
-<div class="tool">
+<div class="container">
 
 <div class="upload" onclick="fileInput.click()">
 <i class="fas fa-cloud-upload-alt fa-3x"></i>
-<p><strong>Upload Images</strong> – Auto Process</p>
+<p><strong>Click or Drag Images</strong></p>
 <input type="file" id="fileInput" hidden multiple accept="image/*">
 </div>
 
-<br>
-<canvas id="canvas"></canvas>
+<div class="preview" id="preview"></div>
 
-<br><br>
-<button class="success" onclick="downloadAll()">Download All (ZIP)</button>
-<button class="danger" onclick="reset()">Reset</button>
+<button class="success" onclick="downloadZIP()">Download All (ZIP)</button>
+<button class="danger" onclick="resetAll()">Reset</button>
 
 </div>
 
 <!-- SEO CONTENT -->
-<section style="max-width:1100px;margin:auto;padding:30px;color:#444">
-<h2>Remove Image Background Online</h2>
+<section style="max-width:1100px;margin:auto;padding:30px;color:#555">
+<h2>Remove Image Background Online Using AI</h2>
 <p>
-Our AI background remover helps you remove image backgrounds instantly with professional accuracy.
-Upload your images, process them automatically, and download transparent PNGs in seconds.
-Perfect for eCommerce, designers, creators, and social media users.
+This free AI background remover uses U²-Net deep learning to separate subjects from backgrounds accurately.
+Perfect for product photos, designers, creators, and eCommerce images.
+No signup required and all processing happens directly in your browser.
 </p>
 </section>
 
 <script>
-const canvas=document.getElementById('canvas');
-const ctx=canvas.getContext('2d',{willReadFrequently:true});
-const fileInput=document.getElementById('fileInput');
+const MODEL_URL = "models/u2net.onnx";
+const SIZE = 320;
 
-let images=[];
-let isProUser=false; // 🔥 CHANGE TO TRUE FOR PRO USERS
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+const loader = document.getElementById("loader");
 
-fileInput.onchange=e=>{
-[...e.target.files].forEach(file=>{
-const r=new FileReader();
-r.onload=ev=>processImage(ev.target.result);
-r.readAsDataURL(file);
-});
+let session;
+let results = [];
+
+// Load AI model
+(async ()=>{
+  loader.style.display="flex";
+  session = await ort.InferenceSession.create(MODEL_URL,{executionProviders:["wasm"]});
+  loader.style.display="none";
+})();
+
+// Upload handler
+fileInput.onchange = e => {
+  [...e.target.files].forEach(file => processFile(file));
 };
 
-function processImage(src){
-const img=new Image();
-img.onload=()=>{
-canvas.width=img.width;
-canvas.height=img.height;
-ctx.drawImage(img,0,0);
+async function processFile(file){
+  loader.style.display="flex";
+  const img = new Image();
+  img.onload = async ()=>{
+    const result = await removeBG(img);
+    results.push(result);
 
-const imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
-const d=imgData.data;
+    const el = document.createElement("img");
+    el.src = result;
+    preview.appendChild(el);
 
-// Detect bg
-let tr=d[0],tg=d[1],tb=d[2];
-for(let i=0;i<d.length;i+=4){
-const dist=Math.hypot(d[i]-tr,d[i+1]-tg,d[i+2]-tb);
-if(dist<80)d[i+3]=0;
-}
-ctx.putImageData(imgData,0,0);
-
-// Watermark for free users
-if(!isProUser){
-ctx.fillStyle="rgba(0,0,0,.4)";
-ctx.font="30px Arial";
-ctx.fillText("yourdomain.com",20,canvas.height-30);
+    loader.style.display="none";
+  };
+  img.src = URL.createObjectURL(file);
 }
 
-images.push(canvas.toDataURL("image/png"));
-};
-img.src=src;
+// AI Background Removal
+async function removeBG(image){
+  const off = document.createElement("canvas");
+  off.width = SIZE;
+  off.height = SIZE;
+  const octx = off.getContext("2d");
+  octx.drawImage(image,0,0,SIZE,SIZE);
+
+  const imgData = octx.getImageData(0,0,SIZE,SIZE).data;
+  const input = new Float32Array(1*3*SIZE*SIZE);
+
+  let p=0;
+  for(let i=0;i<imgData.length;i+=4){
+    input[p++] = imgData[i]/255;
+    input[p++] = imgData[i+1]/255;
+    input[p++] = imgData[i+2]/255;
+  }
+
+  const tensor = new ort.Tensor("float32", input, [1,3,SIZE,SIZE]);
+  const output = await session.run({input:tensor});
+  const mask = output[Object.keys(output)[0]].data;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(image,0,0);
+
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height);
+  for(let y=0;y<canvas.height;y++){
+    for(let x=0;x<canvas.width;x++){
+      const i=(y*canvas.width+x)*4;
+      const mx=Math.floor(x/canvas.width*SIZE);
+      const my=Math.floor(y/canvas.height*SIZE);
+      data.data[i+3] = mask[my*SIZE+mx]*255;
+    }
+  }
+
+  ctx.putImageData(data,0,0);
+  return canvas.toDataURL("image/png");
 }
 
-async function downloadAll(){
-const zip=new JSZip();
-images.forEach((img,i)=>{
-zip.file(`image-${i+1}.png`,img.split(',')[1],{base64:true});
-});
-const blob=await zip.generateAsync({type:"blob"});
-const a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
-a.download="background-removed.zip";
-a.click();
+// Download ZIP
+async function downloadZIP(){
+  if(!results.length) return;
+  const zip = new JSZip();
+  results.forEach((img,i)=>{
+    zip.file(`image-${i+1}.png`, img.split(",")[1], {base64:true});
+  });
+  const blob = await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="ai-background-removed.zip";
+  a.click();
 }
 
-function reset(){
-images=[];
-ctx.clearRect(0,0,canvas.width,canvas.height);
+// Reset
+function resetAll(){
+  results=[];
+  preview.innerHTML="";
 }
 </script>
 

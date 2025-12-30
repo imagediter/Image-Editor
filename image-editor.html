@@ -1,194 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI Image Editor | Nano Banana</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Background Remover – Multi Tool</title>
 
-<!-- React -->
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-<!-- Konva -->
-<script src="https://unpkg.com/konva@9/konva.min.js"></script>
-<script src="https://unpkg.com/react-konva@18/react-konva.umd.js"></script>
-
-<!-- Tailwind -->
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-body {
-  background: linear-gradient(135deg,#667eea,#764ba2);
-  min-height:100vh;
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
+body{background:linear-gradient(135deg,#eef2ff,#dbeafe);padding:15px}
+.container{max-width:1400px;margin:auto}
+
+h1{text-align:center;font-size:2.3rem;
+background:linear-gradient(90deg,#3498db,#8e44ad);
+-webkit-background-clip:text;color:transparent}
+
+.grid{display:grid;gap:20px}
+@media(min-width:900px){.grid{grid-template-columns:1fr 1.2fr}}
+
+.card{background:#fff;border-radius:14px;padding:20px;
+box-shadow:0 10px 25px rgba(0,0,0,.1)}
+
+.upload{border:3px dashed #3498db;border-radius:14px;
+padding:30px;text-align:center;cursor:pointer}
+.upload:hover{background:#f0f7ff}
+
+.preview-list{display:grid;grid-template-columns:repeat(auto-fill,120px);
+gap:12px;margin-top:15px}
+
+.thumb{border-radius:10px;overflow:hidden;
+box-shadow:0 3px 10px rgba(0,0,0,.15);position:relative}
+
+.thumb img{width:100%;height:100px;object-fit:cover}
+
+.controls{margin-top:15px}
+label{font-weight:600;font-size:.9rem}
+input,select{width:100%;margin-top:6px}
+
+button{padding:12px;border:none;border-radius:10px;
+font-weight:600;cursor:pointer;color:#fff}
+
+.process{background:linear-gradient(135deg,#3498db,#2c3e50)}
+.download{background:#27ae60}
+.reset{background:#e74c3c}
+
+canvas{display:none}
+
+.loader{
+position:fixed;inset:0;background:#fff;
+display:none;align-items:center;justify-content:center;
+z-index:999
 }
-canvas { touch-action:none; }
+.spinner{
+width:60px;height:60px;border:6px solid #cfe2f3;
+border-top:6px solid #3498db;border-radius:50%;
+animation:spin 1s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 
 <body>
-<div id="root"></div>
+<div class="container">
+<h1><i class="fas fa-magic"></i> AI Background Remover</h1>
 
-<script type="text/babel">
+<div class="grid">
+<!-- LEFT -->
+<div class="card">
+<div class="upload" id="upload">
+<i class="fas fa-images fa-3x" style="color:#3498db"></i>
+<p>Click or Drop Multiple Images</p>
+<input type="file" id="files" hidden multiple accept="image/*">
+</div>
 
-const { useState, useRef, useEffect, useCallback } = React;
-const { Stage, Layer, Image: KonvaImage, Line } = ReactKonva;
+<div class="preview-list" id="list"></div>
+</div>
 
-/* ---------------- LOADER ---------------- */
-const Loader = () => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white px-6 py-5 rounded-xl shadow-xl text-center">
-      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-      <p className="mt-3 font-medium text-gray-700">AI Processing...</p>
-    </div>
-  </div>
-);
+<!-- RIGHT -->
+<div class="card">
+<div class="controls">
+<label>Edge Sensitivity</label>
+<input type="range" id="sens" min="10" max="100" value="60">
 
-/* ---------------- UPLOADER ---------------- */
-function ImageUploader({ onUpload }) {
-  return (
-    <div className="bg-white rounded-xl p-8 text-center shadow-xl cursor-pointer"
-      onClick={() => document.getElementById("file").click()}>
-      <p className="text-lg font-semibold text-gray-700">Click or Drop Image</p>
-      <p className="text-sm text-gray-500 mt-1">JPG, PNG, WebP</p>
-      <input hidden id="file" type="file" accept="image/*"
-        onChange={e => e.target.files[0] && onUpload(e.target.files[0])} />
-    </div>
-  );
+<label>Output Format</label>
+<select id="format">
+<option value="png">PNG (Transparent)</option>
+<option value="jpeg">JPG</option>
+<option value="webp">WebP</option>
+</select>
+
+<label>Quality (JPG / WebP)</label>
+<input type="range" id="quality" min="0.5" max="1" step="0.05" value="0.9">
+</div>
+
+<div style="margin-top:15px;display:grid;gap:10px">
+<button class="process" id="process">Remove Background</button>
+<button class="download" id="download">Download All</button>
+<button class="reset" id="reset">Reset</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="loader" id="loader">
+<div class="spinner"></div>
+<p>Processing Images...</p>
+</div>
+
+<script>
+const files=document.getElementById("files"),
+upload=document.getElementById("upload"),
+list=document.getElementById("list"),
+sens=document.getElementById("sens"),
+format=document.getElementById("format"),
+quality=document.getElementById("quality"),
+process=document.getElementById("process"),
+download=document.getElementById("download"),
+reset=document.getElementById("reset"),
+loader=document.getElementById("loader");
+
+let images=[],results=[];
+
+upload.onclick=()=>files.click();
+files.onchange=e=>{
+images=[...e.target.files];
+list.innerHTML="";
+images.forEach(f=>{
+let img=document.createElement("img");
+img.src=URL.createObjectURL(f);
+let div=document.createElement("div");
+div.className="thumb";
+div.appendChild(img);
+list.appendChild(div);
+});
+};
+
+process.onclick=async()=>{
+if(!images.length)return;
+loader.style.display="flex";
+results=[];
+for(let f of images){
+let img=new Image();
+img.src=URL.createObjectURL(f);
+await img.decode();
+let c=document.createElement("canvas"),
+ctx=c.getContext("2d");
+c.width=img.width;c.height=img.height;
+ctx.drawImage(img,0,0);
+let d=ctx.getImageData(0,0,c.width,c.height);
+let p=d.data,s=sens.value/100;
+for(let i=0;i<p.length;i+=4){
+let avg=(p[i]+p[i+1]+p[i+2])/3;
+let diff=Math.abs(p[i]-p[i+1])+Math.abs(p[i+1]-p[i+2]);
+if(avg>255*s && diff<80)p[i+3]=0;
 }
-
-/* ---------------- EDITOR ---------------- */
-function Editor({ image, tool, onMask }) {
-  const stageRef = useRef();
-  const [points, setPoints] = useState([]);
-  const [drawing, setDrawing] = useState(false);
-
-  const width = Math.min(window.innerWidth - 40, 800);
-  const height = width * (image.height / image.width);
-
-  useEffect(() => {
-    if (!points.length) return;
-
-    const c = document.createElement("canvas");
-    c.width = image.width;
-    c.height = image.height;
-    const ctx = c.getContext("2d");
-
-    ctx.fillStyle = "black";
-    ctx.fillRect(0,0,c.width,c.height);
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 20;
-    ctx.lineCap = "round";
-
-    ctx.beginPath();
-    ctx.moveTo(points[0], points[1]);
-    for (let i=2;i<points.length;i+=2) {
-      ctx.lineTo(points[i], points[i+1]);
-    }
-    ctx.stroke();
-
-    onMask(c.toDataURL());
-  }, [points]);
-
-  return (
-    <Stage
-      ref={stageRef}
-      width={width}
-      height={height}
-      onMouseDown={e=>{
-        const p = e.target.getStage().getPointerPosition();
-        setDrawing(true);
-        setPoints([p.x, p.y]);
-      }}
-      onMouseMove={e=>{
-        if(!drawing) return;
-        const p = e.target.getStage().getPointerPosition();
-        setPoints(prev=>[...prev,p.x,p.y]);
-      }}
-      onMouseUp={()=>setDrawing(false)}
-      className="mx-auto bg-gray-100 rounded-xl"
-    >
-      <Layer>
-        <KonvaImage image={image} width={width} height={height}/>
-        <Line points={points} stroke="red" strokeWidth={20} />
-      </Layer>
-    </Stage>
-  );
+ctx.putImageData(d,0,0);
+results.push(c);
 }
+loader.style.display="none";
+alert("Processing complete!");
+};
 
-/* ---------------- MOCK AI ---------------- */
-const fakeAI = (file) =>
-  new Promise(res=>{
-    setTimeout(()=>{
-      const img = new Image();
-      img.onload=()=>{
-        const c=document.createElement("canvas");
-        c.width=img.width;c.height=img.height;
-        const ctx=c.getContext("2d");
-        ctx.filter="grayscale(1)";
-        ctx.drawImage(img,0,0);
-        res(c.toDataURL());
-      };
-      img.src=URL.createObjectURL(file);
-    },2000);
-  });
+download.onclick=()=>{
+results.forEach((c,i)=>{
+let a=document.createElement("a");
+a.href=c.toDataURL("image/"+format.value,quality.value);
+a.download="bg-removed-"+(i+1)+"."+format.value;
+a.click();
+});
+};
 
-/* ---------------- APP ---------------- */
-function App(){
-  const [img,setImg]=useState(null);
-  const [file,setFile]=useState(null);
-  const [edited,setEdited]=useState(null);
-  const [loading,setLoading]=useState(false);
-  const [mask,setMask]=useState(null);
-
-  const upload=f=>{
-    const i=new Image();
-    i.onload=()=>setImg(i);
-    i.src=URL.createObjectURL(f);
-    setFile(f);
-  };
-
-  const generate=async()=>{
-    if(!file||!mask) return alert("Select area first");
-    setLoading(true);
-    const out=await fakeAI(file);
-    setEdited(out);
-    setLoading(false);
-  };
-
-  return(
-    <div className="p-4 max-w-6xl mx-auto">
-      {loading && <Loader/>}
-
-      <h1 className="text-3xl font-bold text-white text-center mb-6">
-        AI Image Editor
-      </h1>
-
-      {!img ? (
-        <ImageUploader onUpload={upload}/>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow-xl">
-            <Editor image={img} tool="brush" onMask={setMask}/>
-            <button onClick={generate}
-              className="mt-4 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
-              Generate AI Edit
-            </button>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl shadow-xl">
-            <h3 className="font-semibold mb-2">Result</h3>
-            {edited
-              ? <img src={edited} className="w-full rounded"/>
-              : <p className="text-sm text-gray-500">No output yet</p>}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-ReactDOM.render(<App/>,document.getElementById("root"));
+reset.onclick=()=>location.reload();
 </script>
 </body>
 </html>

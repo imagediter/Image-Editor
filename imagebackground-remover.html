@@ -1,150 +1,312 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Background Remover | Professional Tool</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom Before/After Slider Styling */
-        .slider-container {
-            position: relative;
-            width: 100%;
-            height: 400px;
-            overflow: hidden;
-            border-radius: 12px;
-        }
-        .image-after {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80');
-            background-size: cover;
-        }
-        .image-before {
-            position: absolute;
-            top: 0; left: 0; width: 50%; height: 100%;
-            background-image: url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80');
-            background-size: cover;
-            border-right: 3px solid white;
-            filter: grayscale(100%); /* Simulating "before" state */
-        }
-        .slider-handle {
-            position: absolute;
-            top: 0; bottom: 0; left: 50%;
-            width: 4px; background: white;
-            cursor: ew-resize;
-            transform: translateX(-50%);
-        }
-        .drop-zone--over {
-            border-color: #4F46E5 !important;
-            background-color: #EEF2FF;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Image Background Remover</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#4F46E5;
+  --primary-dark:#4338CA;
+  --bg:#F9FAFB;
+  --border:#E5E7EB;
+  --text:#111827;
+  --muted:#6B7280;
+  --radius:14px;
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:'Inter',sans-serif;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* ---------- Layout ---------- */
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:40px 20px;
+}
+
+.header{
+  text-align:center;
+  margin-bottom:40px;
+}
+
+.header h1{
+  font-size:42px;
+  font-weight:700;
+  margin-bottom:12px;
+}
+
+.header p{
+  font-size:18px;
+  color:var(--muted);
+  max-width:640px;
+  margin:auto;
+}
+
+/* ---------- Main Card ---------- */
+.app{
+  background:#fff;
+  border-radius:var(--radius);
+  box-shadow:0 20px 40px rgba(0,0,0,.06);
+  display:grid;
+  grid-template-columns:280px 1fr;
+  overflow:hidden;
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  border-right:1px solid var(--border);
+  padding:30px;
+}
+
+.sidebar h3{
+  font-size:18px;
+  margin-bottom:20px;
+}
+
+.option{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin-bottom:14px;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.option:hover,
+.option.active{
+  border-color:var(--primary);
+  background:rgba(79,70,229,.05);
+}
+
+.option span{
+  font-weight:500;
+}
+
+/* ---------- Main Area ---------- */
+.main{
+  padding:30px;
+}
+
+/* Upload Box */
+.upload{
+  border:2px dashed var(--border);
+  border-radius:var(--radius);
+  padding:60px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.upload:hover{
+  border-color:var(--primary);
+  background:rgba(79,70,229,.04);
+}
+
+.upload h2{
+  font-size:22px;
+  margin-bottom:10px;
+}
+
+.upload p{
+  color:var(--muted);
+}
+
+.upload strong{
+  color:var(--primary);
+}
+
+/* ---------- Before After ---------- */
+.preview{
+  margin-top:40px;
+}
+
+.preview h3{
+  font-size:20px;
+  margin-bottom:16px;
+}
+
+.compare{
+  position:relative;
+  width:100%;
+  max-width:700px;
+  height:380px;
+  overflow:hidden;
+  border-radius:16px;
+  margin:auto;
+}
+
+.compare img{
+  position:absolute;
+  top:0;
+  left:0;
+  height:100%;
+  width:100%;
+  object-fit:cover;
+}
+
+.after{
+  width:50%;
+  overflow:hidden;
+}
+
+.slider{
+  position:absolute;
+  top:0;
+  left:50%;
+  width:4px;
+  height:100%;
+  background:var(--primary);
+  cursor:ew-resize;
+}
+
+.slider::after{
+  content:"↔";
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:var(--primary);
+  color:#fff;
+  padding:10px;
+  border-radius:50%;
+  font-size:14px;
+}
+
+/* ---------- CTA ---------- */
+.cta{
+  margin-top:40px;
+  text-align:center;
+}
+
+.cta button{
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  padding:16px 32px;
+  font-size:16px;
+  font-weight:600;
+  border-radius:999px;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.cta button:hover{
+  background:var(--primary-dark);
+}
+
+/* ---------- Responsive ---------- */
+@media(max-width:900px){
+  .app{
+    grid-template-columns:1fr;
+  }
+  .sidebar{
+    border-right:none;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+  }
+  .option{
+    min-width:220px;
+  }
+}
+</style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-900">
 
-    <header class="bg-white border-b px-8 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-[#4F46E5] rounded-lg"></div>
-            <span class="text-xl font-bold tracking-tight">ClearCut AI</span>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Remove Image Background Instantly</h1>
+    <p>AI-powered background remover for clean, professional images in seconds.</p>
+  </div>
+
+  <div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h3>Background Options</h3>
+
+      <div class="option active">
+        <span>Transparent Background</span>
+      </div>
+
+      <div class="option">
+        <span>Color Fill</span>
+      </div>
+
+      <div class="option">
+        <span>Image Blur</span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- Upload -->
+      <div class="upload">
+        <h2>Drag & Drop your image here</h2>
+        <p>or <strong>click to upload</strong> (PNG, JPG)</p>
+      </div>
+
+      <!-- Preview -->
+      <div class="preview">
+        <h3>Before & After</h3>
+
+        <div class="compare" id="compare">
+          <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e" alt="Before">
+          <div class="after" id="after">
+            <img src="https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d" alt="After">
+          </div>
+          <div class="slider" id="slider"></div>
         </div>
-        <nav class="hidden md:flex gap-8 font-medium text-slate-600">
-            <a href="#" class="hover:text-[#4F46E5]">How it works</a>
-            <a href="#" class="hover:text-[#4F46E5]">Pricing</a>
-            <a href="#" class="hover:text-[#4F46E5]">API</a>
-        </nav>
-        <button class="bg-[#4F46E5] text-white px-5 py-2 rounded-full font-semibold hover:bg-indigo-700 transition">Get Started</button>
-    </header>
+      </div>
 
-    <main class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        <aside class="lg:col-span-1 space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold mb-4 text-slate-700">Editor Settings</h3>
-                
-                <div class="space-y-4">
-                    <button class="w-full flex items-center justify-between p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50 text-[#4F46E5] font-medium">
-                        Transparent
-                        <div class="w-4 h-4 rounded-full border-4 border-indigo-500"></div>
-                    </button>
-                    
-                    <div>
-                        <label class="text-sm text-slate-500 mb-2 block">Color Fill</label>
-                        <div class="flex gap-2">
-                            <div class="w-8 h-8 rounded-full bg-white border cursor-pointer"></div>
-                            <div class="w-8 h-8 rounded-full bg-blue-400 cursor-pointer"></div>
-                            <div class="w-8 h-8 rounded-full bg-rose-400 cursor-pointer"></div>
-                            <div class="w-8 h-8 rounded-full bg-emerald-400 cursor-pointer"></div>
-                            <div class="w-8 h-8 rounded-full bg-slate-800 cursor-pointer"></div>
-                        </div>
-                    </div>
+      <!-- CTA -->
+      <div class="cta">
+        <button>Remove Background Free</button>
+      </div>
 
-                    <div>
-                        <label class="text-sm text-slate-500 mb-2 block">Background Blur</label>
-                        <input type="range" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#4F46E5]">
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-indigo-900 text-white p-6 rounded-2xl shadow-lg">
-                <p class="text-sm opacity-80 mb-2">Pro Tip:</p>
-                <p class="font-medium text-sm">Upload high-resolution images for the best edge-detection results.</p>
-            </div>
-        </aside>
-
-        <section class="lg:col-span-3 space-y-8">
-            
-            <div id="drop-zone" class="bg-white border-2 border-dashed border-slate-300 rounded-3xl p-12 text-center transition-all hover:border-[#4F46E5] group cursor-pointer">
-                <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition">
-                    <svg class="w-10 h-10 text-[#4F46E5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                </div>
-                <h2 class="text-2xl font-bold mb-2">Upload an image to remove background</h2>
-                <p class="text-slate-500 mb-8">Drag and drop a file here, or click to browse (PNG, JPG up to 10MB)</p>
-                <button class="bg-[#4F46E5] text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition">Upload Image</button>
-            </div>
-
-            <div class="space-y-4">
-                <div class="flex justify-between items-end">
-                    <h3 class="font-bold text-xl">See the magic in action</h3>
-                    <span class="text-sm text-slate-500">100% Automatic and Free</span>
-                </div>
-                
-                <div class="slider-container" id="demo-slider">
-                    <div class="image-after"></div>
-                    <div class="image-before" id="before-img"></div>
-                    <div class="slider-handle" id="handle"></div>
-                </div>
-            </div>
-
-        </section>
     </main>
+  </div>
+</div>
 
-    <script>
-        // Simple Interaction for Before/After Slider
-        const slider = document.getElementById('demo-slider');
-        const beforeImg = document.getElementById('before-img');
-        const handle = document.getElementById('handle');
+<script>
+const slider = document.getElementById("slider");
+const after = document.getElementById("after");
+const compare = document.getElementById("compare");
 
-        slider.addEventListener('mousemove', (e) => {
-            let rect = slider.getBoundingClientRect();
-            let x = e.clientX - rect.left;
-            let percent = (x / rect.width) * 100;
-            
-            if (percent >= 0 && percent <= 100) {
-                beforeImg.style.width = percent + '%';
-                handle.style.left = percent + '%';
-            }
-        });
+let dragging = false;
 
-        // Drag & Drop visual state
-        const dropZone = document.getElementById('drop-zone');
-        ['dragover', 'dragleave', 'drop'].forEach(evt => {
-            dropZone.addEventListener(evt, (e) => {
-                e.preventDefault();
-                if (evt === 'dragover') dropZone.classList.add('drop-zone--over');
-                else dropZone.classList.remove('drop-zone--over');
-            });
-        });
-    </script>
+slider.addEventListener("mousedown",()=>dragging=true);
+window.addEventListener("mouseup",()=>dragging=false);
+
+window.addEventListener("mousemove",(e)=>{
+  if(!dragging) return;
+  const rect = compare.getBoundingClientRect();
+  let x = e.clientX - rect.left;
+  x = Math.max(0,Math.min(x,rect.width));
+  slider.style.left = x+"px";
+  after.style.width = x+"px";
+});
+</script>
+
 </body>
 </html>

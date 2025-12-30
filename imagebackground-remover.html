@@ -11,346 +11,229 @@
     <style>
         :root {
             --primary: #007bff;
-            --primary-hover: #0056b3;
             --bg: #f8f9fa;
             --card-bg: #ffffff;
             --text: #2d3436;
-            --muted: #636e72;
             --border: #dfe6e9;
             --radius: 12px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        
-        body { background: var(--bg); color: var(--text); line-height: 1.6; }
+        body { background: var(--bg); color: var(--text); }
 
-        /* Navigation */
         nav {
             background: var(--card-bg);
             padding: 1rem 6%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        .logo { font-weight: 700; font-size: 1.3rem; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .logo { font-weight: 700; font-size: 1.3rem; color: var(--primary); }
 
-        /* Main Layout */
-        .main { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        .layout { display: grid; grid-template-columns: 1fr 320px; gap: 30px; }
-        @media (max-width: 992px) { .layout { grid-template-columns: 1fr; } }
+        .main { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        .layout { display: grid; grid-template-columns: 1fr 320px; gap: 25px; }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 
-        /* Uploader & Preview Card */
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
             position: relative;
-            min-height: 400px;
+            min-height: 450px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .drop-zone {
-            border: 2px dashed #cbd5e0;
+            border: 2px dashed var(--primary);
             border-radius: var(--radius);
-            padding: 80px 20px;
+            padding: 60px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: #fafafa;
+            background: #fcfdfe;
         }
-        .drop-zone:hover, .drop-zone.drag {
-            border-color: var(--primary);
-            background: rgba(0,123,255,0.03);
-        }
-        .drop-zone i { font-size: 3.5rem; color: var(--primary); margin-bottom: 15px; }
+        .drop-zone i { font-size: 3rem; color: var(--primary); margin-bottom: 10px; }
 
-        .preview-container {
-            display: none;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .canvas-wrapper {
-            position: relative;
+        .preview-area { display: none; width: 100%; }
+        .canvas-container {
             width: 100%;
-            display: flex;
-            justify-content: center;
             background: #eee;
-            border-radius: var(--radius);
-            overflow: hidden;
-            /* Checkerboard pattern */
             background-image: linear-gradient(45deg, #ddd 25%, transparent 25%), linear-gradient(-45deg, #ddd 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ddd 75%), linear-gradient(-45deg, transparent 75%, #ddd 75%);
             background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
         }
         canvas { max-width: 100%; height: auto; display: block; }
 
-        /* Sidebar Blocks */
         .sidebar { display: flex; flex-direction: column; gap: 20px; }
-        .box {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-        }
-        .box h3 { font-size: 0.95rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+        .box { background: #fff; padding: 20px; border-radius: var(--radius); box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .box h3 { font-size: 0.9rem; margin-bottom: 15px; color: #666; text-transform: uppercase; }
 
-        /* Tools & Controls */
         .btn {
-            width: 100%; padding: 12px; border-radius: 8px; border: none;
-            font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: 0.2s; font-size: 0.9rem;
+            width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .btn-primary { background: var(--primary); color: #fff; }
-        .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
-        .btn-primary:disabled { background: #cbd5e0; cursor: not-allowed; }
-        
-        .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); margin-top: 10px; }
-        .btn-outline:hover { background: #f8f9fa; border-color: #ccd0d2; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); margin-top: 10px; }
 
-        .color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-        .color-option {
-            width: 100%; aspect-ratio: 1; border-radius: 6px; cursor: pointer;
-            border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); transition: 0.2s;
+        .loader {
+            display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.9);
+            z-index: 100; flex-direction: column; align-items: center; justify-content: center; border-radius: var(--radius);
         }
-        .color-option:hover { transform: scale(1.1); }
-        .color-option.active { box-shadow: 0 0 0 2px var(--primary); }
-
-        .control-group { margin-bottom: 15px; }
-        .control-group label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px; font-weight: 500; }
-        input[type=range] { width: 100%; height: 6px; border-radius: 5px; appearance: none; background: #eee; outline: none; }
-        input[type=range]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; background: var(--primary); border-radius: 50%; cursor: pointer; }
-
-        /* Loader */
-        .loader-overlay {
-            display: none; position: absolute; inset: 0;
-            background: rgba(255,255,255,0.8); backdrop-filter: blur(4px);
-            z-index: 10; flex-direction: column; align-items: center; justify-content: center;
-            border-radius: var(--radius);
-        }
-        .spinner {
-            width: 50px; height: 50px; border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary); border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #errorMsg { color: #e74c3c; font-size: 0.85rem; margin-top: 10px; display: none; text-align: center; font-weight: 500;}
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo"><i class="fa-solid fa-wand-magic-sparkles"></i> Multi Tool Hub</div>
+    <div class="logo"><i class="fa-solid fa-scissors"></i> Multi Tool Hub</div>
 </nav>
 
 <div class="main">
     <div class="layout">
         <div class="card">
-            <div class="loader-overlay" id="loader">
+            <div class="loader" id="loader">
                 <div class="spinner"></div>
-                <p style="margin-top:15px; font-weight:700">AI is removing background...</p>
-                <p style="font-size:0.8rem; color:var(--muted)">This may take a moment for large images</p>
+                <p style="margin-top:15px; font-weight:600">AI is thinking...</p>
+                <small id="progressText">Loading Model (approx. 80MB)...</small>
             </div>
 
             <div class="drop-zone" id="dropZone">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <h2>Upload an Image</h2>
-                <p style="color:var(--muted)">Drag & drop or click to browse</p>
+                <i class="fa-solid fa-image"></i>
+                <h2>Select Image</h2>
+                <p>Click to upload or drag and drop</p>
                 <input type="file" id="fileInput" hidden accept="image/*">
             </div>
 
-            <div class="preview-container" id="previewContainer">
-                <div class="canvas-wrapper">
-                    <canvas id="outputCanvas"></canvas>
+            <div id="errorMsg"></div>
+
+            <div class="preview-area" id="previewArea">
+                <div class="canvas-container">
+                    <canvas id="mainCanvas"></canvas>
                 </div>
             </div>
         </div>
 
         <div class="sidebar">
             <div class="box">
-                <h3><i class="fa-solid fa-download"></i> Export</h3>
-                <button class="btn btn-primary" id="downloadBtn" disabled>
-                    Download Result (PNG)
-                </button>
-                <button class="btn btn-outline" onclick="location.reload()">
-                    <i class="fa-solid fa-arrow-rotate-left"></i> New Image
-                </button>
+                <h3>Export</h3>
+                <button class="btn btn-primary" id="downloadBtn" disabled>Download PNG</button>
+                <button class="btn btn-outline" onclick="location.reload()">Start Over</button>
             </div>
 
             <div class="box">
-                <h3><i class="fa-solid fa-palette"></i> Background</h3>
-                <div class="color-grid">
-                    <div class="color-option" style="background: transparent; background-image: conic-gradient(#eee 90deg, #fff 90deg 180deg, #eee 180deg 270deg, #fff 270deg);" onclick="updateBackground('transparent', this)"></div>
-                    <div class="color-option" style="background: #ffffff" onclick="updateBackground('#ffffff', this)"></div>
-                    <div class="color-option" style="background: #000000" onclick="updateBackground('#000000', this)"></div>
-                    <div class="color-option" style="background: #3498db" onclick="updateBackground('#3498db', this)"></div>
-                    <div class="color-option" style="background: #2ecc71" onclick="updateBackground('#2ecc71', this)"></div>
-                </div>
-                <div style="margin-top:15px">
-                    <label style="font-size:0.8rem; display:block; margin-bottom:5px">Custom Image:</label>
-                    <input type="file" id="customBgInput" accept="image/*" style="font-size:0.7rem; width:100%">
-                </div>
-            </div>
-
-            <div class="box">
-                <h3><i class="fa-solid fa-sliders"></i> Refinement</h3>
-                <div class="control-group">
-                    <label>Feathering <span><span id="featherVal">0</span>px</span></label>
-                    <input type="range" id="featherRange" min="0" max="15" value="0">
-                </div>
+                <h3>Refine Edges</h3>
+                <label style="font-size:0.8rem">Smoothing (Feather): <span id="fVal">0</span>px</label>
+                <input type="range" id="featherRange" min="0" max="10" value="0" style="width:100%; margin-top:8px">
             </div>
         </div>
     </div>
 </div>
 
 <script type="module">
-    import removeBg from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm";
+    // Using a more stable version and explicit imports
+    import imglyRemoveBackground from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm";
 
-    const fileInput = document.getElementById('fileInput');
     const dropZone = document.getElementById('dropZone');
-    const previewContainer = document.getElementById('previewContainer');
-    const canvas = document.getElementById('outputCanvas');
-    const ctx = canvas.getContext('2d');
+    const fileInput = document.getElementById('fileInput');
     const loader = document.getElementById('loader');
+    const previewArea = document.getElementById('previewArea');
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
     const downloadBtn = document.getElementById('downloadBtn');
-    
+    const errorMsg = document.getElementById('errorMsg');
+    const progressText = document.getElementById('progressText');
     const featherRange = document.getElementById('featherRange');
-    const featherVal = document.getElementById('featherVal');
-    const customBgInput = document.getElementById('customBgInput');
 
-    let processedImage = null; // Cached image element
-    let bgType = 'transparent'; // 'transparent', 'color', or 'image'
-    let bgColor = 'transparent';
-    let bgImgElement = null;
-    let currentFeather = 0;
+    let processedImgElement = null;
 
-    // --- Interaction Listeners ---
+    // 1. Initial Check: The AI library requires a Secure Context (HTTPS)
+    if (!window.isSecureContext) {
+        errorMsg.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> <b>Security Error:</b> AI tools require HTTPS or Localhost to work. They cannot run from a local file (file://).";
+        errorMsg.style.display = 'block';
+    }
+
     dropZone.onclick = () => fileInput.click();
-    
-    fileInput.onchange = (e) => handleUpload(e.target.files[0]);
-    
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('drag'); };
-    dropZone.ondragleave = () => dropZone.classList.remove('drag');
-    dropZone.ondrop = (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drag');
-        handleUpload(e.dataTransfer.files[0]);
-    };
+    fileInput.onchange = (e) => handleImage(e.target.files[0]);
 
-    featherRange.oninput = (e) => {
-        currentFeather = parseInt(e.target.value);
-        featherVal.innerText = currentFeather;
-        render();
-    };
-
-    customBgInput.onchange = (e) => {
-        const file = e.target.files[0];
+    async function handleImage(file) {
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                bgImgElement = img;
-                bgType = 'image';
-                render();
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    };
-
-    window.updateBackground = (color, el) => {
-        document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('active'));
-        if(el) el.classList.add('active');
         
-        bgType = color === 'transparent' ? 'transparent' : 'color';
-        bgColor = color;
-        render();
-    };
-
-    // --- Core Logic ---
-
-    async function handleUpload(file) {
-        if (!file || !file.type.startsWith('image/')) return;
-
-        // Reset UI
-        dropZone.style.display = 'none';
-        previewContainer.style.display = 'flex';
+        // Setup UI
+        errorMsg.style.display = 'none';
         loader.style.display = 'flex';
-        downloadBtn.disabled = true;
+        dropZone.style.display = 'none';
 
         try {
-            // Processing with imgly
-            const blob = await removeBg(file, {
+            // Processing
+            const resultBlob = await imglyRemoveBackground(file, {
+                // Pointing to the specific CDN folder for required WASM files
                 publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/",
                 progress: (key, current, total) => {
-                    console.log(`Processing ${key}: ${Math.round(current/total*100)}%`);
+                    const percent = Math.round((current / total) * 100);
+                    progressText.innerText = `Downloading Model: ${percent}%`;
                 }
             });
 
-            // Convert blob to Image Object for faster canvas rendering
-            const url = URL.createObjectURL(blob);
+            // Convert result to image
+            const url = URL.createObjectURL(resultBlob);
             const img = new Image();
             img.onload = () => {
-                processedImage = img;
+                processedImgElement = img;
                 render();
                 loader.style.display = 'none';
+                previewArea.style.display = 'block';
                 downloadBtn.disabled = false;
-                URL.revokeObjectURL(url); // Clean up
             };
             img.src = url;
 
-        } catch (error) {
-            console.error(error);
-            alert("AI processing failed. Ensure you are using a modern browser and a stable connection.");
-            location.reload();
+        } catch (err) {
+            console.error(err);
+            loader.style.display = 'none';
+            dropZone.style.display = 'block';
+            errorMsg.style.display = 'block';
+            errorMsg.innerHTML = "<b>Processing Failed:</b> Make sure your internet is fast enough to download the AI model (80MB) and that you are using HTTPS.";
         }
     }
 
     function render() {
-        if (!processedImage) return;
+        if (!processedImgElement) return;
+        const feather = parseInt(featherRange.value);
+        
+        canvas.width = processedImgElement.width;
+        canvas.height = processedImgElement.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const w = processedImage.width;
-        const h = processedImage.height;
-        canvas.width = w;
-        canvas.height = h;
-
-        ctx.clearRect(0, 0, w, h);
-
-        // 1. Draw Background
-        if (bgType === 'color') {
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(0, 0, w, h);
-        } else if (bgType === 'image' && bgImgElement) {
-            // Cover fit logic
-            const ratio = Math.max(w / bgImgElement.width, h / bgImgElement.height);
-            const newW = bgImgElement.width * ratio;
-            const newH = bgImgElement.height * ratio;
-            ctx.drawImage(bgImgElement, (w - newW) / 2, (h - newH) / 2, newW, newH);
-        }
-
-        // 2. Draw Main Image with Feathering
-        if (currentFeather > 0) {
-            ctx.save();
-            ctx.filter = `blur(${currentFeather}px)`;
-            ctx.drawImage(processedImage, 0, 0);
-            ctx.restore();
-            
-            // This ensures the blur doesn't bleed out into the transparency
+        if (feather > 0) {
+            ctx.filter = `blur(${feather}px)`;
+            ctx.drawImage(processedImgElement, 0, 0);
+            // Clipping to prevent blur bleed
             ctx.globalCompositeOperation = "destination-in";
-            ctx.drawImage(processedImage, 0, 0);
+            ctx.drawImage(processedImgElement, 0, 0);
             ctx.globalCompositeOperation = "source-over";
         } else {
-            ctx.drawImage(processedImage, 0, 0);
+            ctx.drawImage(processedImgElement, 0, 0);
         }
     }
 
+    featherRange.oninput = (e) => {
+        document.getElementById('fVal').innerText = e.target.value;
+        render();
+    };
+
     downloadBtn.onclick = () => {
         const link = document.createElement('a');
-        link.download = 'multi-tool-hub-no-bg.png';
-        link.href = canvas.toDataURL('image/png', 1.0);
+        link.download = 'no-background.png';
+        link.href = canvas.toDataURL('image/png');
         link.click();
     };
 </script>

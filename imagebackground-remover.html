@@ -16,6 +16,7 @@
   --text:#111827;
   --muted:#6B7280;
   --radius:16px;
+  --success:#10B981;
 }
 
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
@@ -46,8 +47,16 @@ body{background:var(--bg);color:var(--text)}
   border-radius:12px;
   margin-bottom:14px;
   cursor:pointer;
+  transition: all 0.2s ease;
 }
-.option.active{border-color:var(--primary);background:rgba(79,70,229,.05)}
+.option.active{
+  border-color:var(--primary);
+  background:rgba(79,70,229,.05);
+  font-weight: 600;
+}
+.option:hover{
+  background: rgba(79,70,229,.03);
+}
 
 /* Main */
 .main{padding:30px}
@@ -60,9 +69,19 @@ body{background:var(--bg);color:var(--text)}
   text-align:center;
   cursor:pointer;
   transition:.2s;
+  background: #fafafa;
 }
-.upload:hover{border-color:var(--primary);background:rgba(79,70,229,.04)}
-
+.upload:hover{
+  border-color:var(--primary);
+  background:rgba(79,70,229,.04);
+}
+.upload h2{
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.upload p{
+  color: var(--muted);
+}
 .upload input{display:none}
 
 /* Preview */
@@ -74,15 +93,21 @@ body{background:var(--bg);color:var(--text)}
   margin:auto;
   border-radius:16px;
   overflow:hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 .compare img{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
-  object-fit:cover;
+  object-fit:contain;
+  background: #f0f0f0;
 }
-.after{width:50%;overflow:hidden}
+.after{
+  width:50%;
+  overflow:hidden;
+  box-shadow: inset -2px 0 5px rgba(0,0,0,0.1);
+}
 .slider{
   position:absolute;
   left:50%;
@@ -90,6 +115,8 @@ body{background:var(--bg);color:var(--text)}
   width:4px;
   height:100%;
   background:var(--primary);
+  cursor: col-resize;
+  z-index: 10;
 }
 .slider::after{
   content:"↔";
@@ -101,10 +128,17 @@ body{background:var(--bg);color:var(--text)}
   color:#fff;
   padding:10px;
   border-radius:50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
 /* CTA */
-.cta{text-align:center;margin-top:40px}
+.cta{text-align:center;margin-top:30px}
 .cta button{
   background:var(--primary);
   color:#fff;
@@ -113,8 +147,21 @@ body{background:var(--bg);color:var(--text)}
   border-radius:999px;
   font-weight:600;
   cursor:pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79,70,229,0.3);
 }
-.cta button:hover{background:var(--primary-dark)}
+.cta button:hover{
+  background:var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79,70,229,0.4);
+}
+.cta button:disabled{
+  background: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
 /* Pricing */
 .pricing{
@@ -132,9 +179,14 @@ body{background:var(--bg);color:var(--text)}
   border:1px solid var(--border);
   border-radius:20px;
   padding:30px;
+  transition: all 0.3s ease;
+}
+.plan:hover{
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 .plan.pro{border:2px solid var(--primary)}
-.plan h3{font-size:22px}
+.plan h3{font-size:22px; margin-bottom: 12px;}
 .price{font-size:36px;font-weight:700;margin:16px 0}
 .plan button{
   margin-top:20px;
@@ -144,9 +196,22 @@ body{background:var(--bg);color:var(--text)}
   border:none;
   cursor:pointer;
   font-weight:600;
+  font-size: 16px;
 }
-.free-btn{background:#e5e7eb}
-.pro-btn{background:var(--primary);color:#fff}
+.free-btn{
+  background:#e5e7eb;
+  color: var(--text);
+}
+.pro-btn{
+  background:var(--primary);
+  color:#fff;
+}
+.free-btn:hover{
+  background: #d1d5db;
+}
+.pro-btn:hover{
+  background: var(--primary-dark);
+}
 
 /* Loader */
 .loader{
@@ -169,10 +234,53 @@ body{background:var(--bg);color:var(--text)}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* Notification */
+.notification{
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--success);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  z-index: 1000;
+  transform: translateX(150%);
+  transition: transform 0.3s ease;
+}
+.notification.show{
+  transform: translateX(0);
+}
+
+/* Download button */
+.download-btn{
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  margin-top: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+.download-btn:hover{
+  background: #0da271;
+}
+
 @media(max-width:900px){
   .app{grid-template-columns:1fr}
-  .sidebar{border-right:none;border-bottom:1px solid var(--border);display:flex;gap:12px}
-  .option{min-width:200px}
+  .sidebar{border-right:none;border-bottom:1px solid var(--border);display:flex;gap:12px; overflow-x: auto;}
+  .option{min-width:160px; white-space: nowrap;}
+  .compare{height: 300px;}
+}
+
+@media(max-width:600px){
+  .header h1{font-size: 32px;}
+  .compare{height: 250px;}
 }
 </style>
 </head>
@@ -184,6 +292,8 @@ body{background:var(--bg);color:var(--text)}
   <p style="margin-top:20px;font-weight:500">Removing background…</p>
 </div>
 
+<div class="notification" id="notification">Background removed successfully!</div>
+
 <div class="container">
   <div class="header">
     <h1>AI Image Background Remover</h1>
@@ -191,36 +301,42 @@ body{background:var(--bg);color:var(--text)}
   </div>
 
   <div class="app">
-
     <aside class="sidebar">
-      <h3>Options</h3>
-      <div class="option active">Transparent</div>
-      <div class="option">Color Fill</div>
-      <div class="option">Blur</div>
+      <h3>Output Options</h3>
+      <div class="option active" data-option="transparent">Transparent Background</div>
+      <div class="option" data-option="white">White Background</div>
+      <div class="option" data-option="blur">Blurred Background</div>
     </aside>
 
     <main class="main">
-
-      <label class="upload">
+      <label class="upload" id="uploadLabel">
         <h2>Drag & Drop Image</h2>
-        <p>or click to upload</p>
+        <p>or click to upload (JPG, PNG)</p>
         <input type="file" id="fileInput" accept="image/*">
       </label>
 
-      <div class="preview">
+      <div class="preview" id="previewContainer" style="display: none;">
         <div class="compare" id="compare">
-          <img id="beforeImg" src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e">
+          <img id="beforeImg" src="">
           <div class="after" id="after">
-            <img id="afterImg" src="https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d">
+            <img id="afterImg" src="">
           </div>
-          <div class="slider"></div>
+          <div class="slider" id="slider"></div>
+        </div>
+        <div class="cta">
+          <button id="downloadBtn" class="download-btn" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+              <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+            </svg>
+            Download Result
+          </button>
         </div>
       </div>
 
       <div class="cta">
-        <button onclick="processImage()">Remove Background</button>
+        <button id="processBtn" onclick="processImage()" disabled>Remove Background</button>
       </div>
-
     </main>
   </div>
 
@@ -233,14 +349,14 @@ body{background:var(--bg);color:var(--text)}
       <div class="plan">
         <h3>Free</h3>
         <div class="price">₹0</div>
-        <p>Low-res exports</p>
+        <p>• Up to 50 images/month<br>• Standard resolution<br>• Basic AI processing</p>
         <button class="free-btn">Start Free</button>
       </div>
 
       <div class="plan pro">
         <h3>Pro</h3>
         <div class="price">₹299/mo</div>
-        <p>HD exports • No watermark</p>
+        <p>• Unlimited images<br>• HD & 4K exports<br>• No watermark<br>• Priority processing</p>
         <button class="pro-btn">Upgrade</button>
       </div>
     </div>
@@ -248,13 +364,207 @@ body{background:var(--bg);color:var(--text)}
 </div>
 
 <script>
-function processImage(){
-  document.getElementById("loader").style.display="flex";
-  setTimeout(()=>{
-    document.getElementById("loader").style.display="none";
-    alert("Background removed (API ready)");
-  },2500);
+// DOM Elements
+const fileInput = document.getElementById('fileInput');
+const uploadLabel = document.getElementById('uploadLabel');
+const beforeImg = document.getElementById('beforeImg');
+const afterImg = document.getElementById('afterImg');
+const previewContainer = document.getElementById('previewContainer');
+const processBtn = document.getElementById('processBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const loader = document.getElementById('loader');
+const notification = document.getElementById('notification');
+const slider = document.getElementById('slider');
+const afterContainer = document.getElementById('after');
+const options = document.querySelectorAll('.option');
+
+// State
+let currentImage = null;
+let processedImage = null;
+let currentOption = 'transparent';
+
+// Option selection
+options.forEach(option => {
+  option.addEventListener('click', () => {
+    options.forEach(opt => opt.classList.remove('active'));
+    option.classList.add('active');
+    currentOption = option.dataset.option;
+    
+    // If we have a processed image, apply the new option
+    if (processedImage) {
+      applyOptionToImage();
+    }
+  });
+});
+
+// File upload handling
+fileInput.addEventListener('change', function(e) {
+  if (e.target.files && e.target.files[0]) {
+    const file = e.target.files[0];
+    if (!file.type.match('image.*')) {
+      alert('Please select an image file (JPG, PNG, etc.)');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      currentImage = event.target.result;
+      beforeImg.src = currentImage;
+      afterImg.src = currentImage; // Show original in after initially
+      previewContainer.style.display = 'block';
+      processBtn.disabled = false;
+      uploadLabel.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// Drag and drop handling
+uploadLabel.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  this.style.borderColor = '#4F46E5';
+  this.style.backgroundColor = 'rgba(79,70,229,.08)';
+});
+
+uploadLabel.addEventListener('dragleave', function(e) {
+  e.preventDefault();
+  this.style.borderColor = '#E5E7EB';
+  this.style.backgroundColor = 'rgba(255,255,255,0)';
+});
+
+uploadLabel.addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.style.borderColor = '#E5E7EB';
+  this.style.backgroundColor = 'rgba(255,255,255,0)';
+  
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    fileInput.files = e.dataTransfer.files;
+    const event = new Event('change', { bubbles: true });
+    fileInput.dispatchEvent(event);
+  }
+});
+
+// Process image function (simulated)
+function processImage() {
+  if (!currentImage) return;
+  
+  loader.style.display = 'flex';
+  
+  // Simulate API processing time
+  setTimeout(() => {
+    loader.style.display = 'none';
+    
+    // In a real app, this would be the API response
+    // For demo, we'll create a semi-transparent version
+    processedImage = currentImage; // In reality, this would be the processed image
+    
+    // Apply the selected option
+    applyOptionToImage();
+    
+    // Show download button
+    downloadBtn.style.display = 'inline-flex';
+    
+    // Show notification
+    notification.classList.add('show');
+    setTimeout(() => {
+      notification.classList.remove('show');
+    }, 3000);
+  }, 1500);
 }
+
+// Apply selected option to the processed image
+function applyOptionToImage() {
+  // In a real app, this would apply the actual effect
+  // For demo, we'll just update the alt text to show the option
+  afterImg.alt = `Processed with ${currentOption} option`;
+  
+  // Simulate different backgrounds
+  if (currentOption === 'white') {
+    afterContainer.style.background = '#ffffff';
+    afterImg.style.opacity = '0.95';
+  } else if (currentOption === 'blur') {
+    afterContainer.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    afterImg.style.filter = 'blur(2px)';
+  } else {
+    // Transparent - show checkerboard pattern
+    afterContainer.style.background = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\' viewBox=\'0 0 20 20\'%3E%3Crect width=\'10\' height=\'10\' fill=\'%23f0f0f0\'/%3E%3Crect x=\'10\' y=\'10\' width=\'10\' height=\'10\' fill=\'%23f0f0f0\'/%3E%3C/svg%3E")';
+    afterImg.style.filter = 'none';
+    afterImg.style.opacity = '1';
+  }
+}
+
+// Slider functionality
+let isDragging = false;
+let startX = 0;
+let startLeft = 0;
+
+slider.addEventListener('mousedown', startDrag);
+slider.addEventListener('touchstart', startDrag, { passive: false });
+
+function startDrag(e) {
+  isDragging = true;
+  startX = e.type === 'mousedown' ? e.pageX : e.touches[0].pageX;
+  startLeft = parseInt(document.defaultView.getComputedStyle(slider).left) || 50;
+  
+  e.preventDefault();
+  
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', stopDrag);
+  document.addEventListener('touchmove', drag, { passive: false });
+  document.addEventListener('touchend', stopDrag);
+}
+
+function drag(e) {
+  if (!isDragging) return;
+  
+  const x = e.type === 'mousemove' ? e.pageX : e.touches[0].pageX;
+  const walk = x - startX;
+  let newLeft = startLeft + (walk / afterContainer.parentElement.offsetWidth) * 100;
+  
+  // Constrain between 0% and 100%
+  newLeft = Math.max(0, Math.min(100, newLeft));
+  
+  slider.style.left = `${newLeft}%`;
+  afterContainer.style.width = `${newLeft}%`;
+}
+
+function stopDrag() {
+  isDragging = false;
+  document.removeEventListener('mousemove', drag);
+  document.removeEventListener('mouseup', stopDrag);
+  document.removeEventListener('touchmove', drag);
+  document.removeEventListener('touchend', stopDrag);
+}
+
+// Download functionality
+downloadBtn.addEventListener('click', function() {
+  // Create a temporary link
+  const link = document.createElement('a');
+  link.download = 'background-removed-image.png';
+  link.href = afterImg.src;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  // Show notification
+  notification.textContent = 'Image downloaded!';
+  notification.classList.add('show');
+  setTimeout(() => {
+    notification.classList.remove('show');
+    notification.textContent = 'Background removed successfully!';
+  }, 3000);
+});
+
+// Initialize with sample image
+window.addEventListener('load', function() {
+  // Load sample image
+  const sampleImage = 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80';
+  currentImage = sampleImage;
+  beforeImg.src = sampleImage;
+  afterImg.src = sampleImage;
+  previewContainer.style.display = 'block';
+  processBtn.disabled = false;
+});
 </script>
 
 </body>
